@@ -1,6 +1,6 @@
 // Liqour-Ledger.cpp : Defines the entry point for the application.
 //
-
+//test
 #include "framework.h"
 #include "Liqour-Ledger.h"
 
@@ -11,7 +11,7 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
-// Forward declarations of functions included in this code module:
+// Forward declarations of functions included in this code module
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
