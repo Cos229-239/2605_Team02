@@ -2,11 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.google.services)
+    // alias(libs.plugins.google.services)
 }
 
 android {
-    namespace = "com.liqour.ledger"
+    namespace = "com.liquor.ledger"
     compileSdk = 35
 
     defaultConfig {
@@ -61,9 +61,9 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-auth-ktx")
+    // implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    // implementation("com.google.firebase:firebase-firestore-ktx")
+    // implementation("com.google.firebase:firebase-auth-ktx")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
