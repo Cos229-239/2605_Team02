@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.liqour.ledger"
+    namespace = "com.liquor.ledger"
     compileSdk = 35
 
     defaultConfig {
