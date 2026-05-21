@@ -116,15 +116,23 @@ class MainActivity : Activity() {
         header.text = pageName
         contentBox.removeAllViews()
 
-        val pageText = TextView(this)
-        pageText.text = "$pageName screen will go here"
-        pageText.textSize = 18f
-        pageText.setTextColor(Color.DKGRAY)
-        pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
+        if (pageName == "POS / Register") {
 
-        contentBox.addView(pageText)
     }
+            val posPage = POSPage(this)
+            contentBox.addView(posPage.build())
+        }
 
+        else {
+            val pageText = TextView(this)
+            pageText.text = "$pageName screen will go here"
+            pageText.textSize = 18f
+            pageText.setTextColor(Color.DKGRAY)
+            pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
+
+            contentBox.addView(pageText)
+        }
+    }
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()
     }
