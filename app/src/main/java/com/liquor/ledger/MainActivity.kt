@@ -9,6 +9,13 @@ import android.widget.TextView
 
 class MainActivity : Activity() {
 
+    private lateinit var header: TextView
+    private lateinit var contentBox: LinearLayout
+
+    private val darkBlue = Color.rgb(16, 30, 55)
+    private val activeBlue = Color.rgb(45, 95, 255)
+    private val lightGray = Color.rgb(245, 245, 245)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -23,7 +30,7 @@ class MainActivity : Activity() {
         sidebar.setBackgroundColor(Color.rgb(16, 30, 55))
 
         val sidebarParams = LinearLayout.LayoutParams(
-            290,
+            dp(230),
             LinearLayout.LayoutParams.MATCH_PARENT
         )
 
@@ -32,7 +39,7 @@ class MainActivity : Activity() {
         title.text = "Liquor Ledger"
         title.textSize = 22f
         title.setTextColor(Color.WHITE)
-        title.setPadding(30, 60, 20, 60)
+        title.setPadding(dp(24), dp(48), dp(16), dp(40))
 
         sidebar.addView(title)
 
@@ -57,22 +64,25 @@ class MainActivity : Activity() {
         )
 
         // HEADER
-        val header = TextView(this)
-        header.text = "Dashboard"
+        header = TextView(this)
+        header.text = "POS / Register"
         header.textSize = 32f
         header.setTextColor(Color.BLACK)
-        header.setPadding(50, 50, 0, 20)
+        header.setPadding(dp(32), dp(32), 0, dp(16))
 
         // CONTENT BOX
-        val contentBox = LinearLayout(this)
-        contentBox.setBackgroundColor(Color.rgb(245, 245, 245))
+        contentBox = LinearLayout(this)
+        contentBox.orientation = LinearLayout.VERTICAL
+        contentBox.setBackgroundColor(lightGray)
+        contentBox.setPadding(dp(20), dp(20), dp(20), dp(20))
 
         val boxParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            900
+            0,
+            1f
         )
 
-        boxParams.setMargins(40, 20, 40, 40)
+        boxParams.setMargins(dp(24), dp(10), dp(24), dp(24))
 
         mainContent.addView(header)
         mainContent.addView(contentBox, boxParams)
@@ -81,6 +91,8 @@ class MainActivity : Activity() {
         root.addView(mainContent, mainParams)
 
         setContentView(root)
+
+        loadPage("POS / Register")
     }
 
     private fun makeTab(text: String, active: Boolean): TextView {
@@ -88,17 +100,32 @@ class MainActivity : Activity() {
         val tab = TextView(this)
 
         tab.text = text
-        tab.textSize = 18f
+        tab.textSize = 16f
         tab.gravity = Gravity.CENTER_VERTICAL
-
-        tab.setPadding(35, 30, 20, 30)
-
-        if (active) {
-            tab.setBackgroundColor(Color.rgb(45, 95, 255))
-        }
-
+        tab.setPadding(dp(28), dp(18), dp(16), dp(18))
         tab.setTextColor(Color.WHITE)
 
+        tab.setOnClickListener {
+            loadPage(text)
+        }
+
         return tab
+    }
+
+    private fun loadPage(pageName: String) {
+        header.text = pageName
+        contentBox.removeAllViews()
+
+        val pageText = TextView(this)
+        pageText.text = "$pageName screen will go here"
+        pageText.textSize = 18f
+        pageText.setTextColor(Color.DKGRAY)
+        pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
+
+        contentBox.addView(pageText)
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 }
