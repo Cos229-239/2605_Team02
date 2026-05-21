@@ -1,5 +1,6 @@
 // This file handles all user authentication for the app.
 // Any screen that needs to log in or log out a user will use this class.
+
 /*
 package com.liquor.ledger.firebase
 
