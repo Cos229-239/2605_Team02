@@ -1,4 +1,4 @@
-package com.example.liquorledger
+package com.example.ledger
 
 import org.junit.Test
 
