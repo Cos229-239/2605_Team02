@@ -46,7 +46,6 @@ package com.liquor.ledger
 
             leftSide.addView(leftText)
             rightPanel.addView(rightText)
-
             page.addView(leftSide, leftParams)
             page.addView(rightPanel, rightParams)
 
