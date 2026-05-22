@@ -120,5 +120,17 @@ class MainActivity : Activity() {
         // ADD HEADER AND CONTENT BOX
         mainContent.addView(header)
         mainContent.addView(contentBox, boxParams)
+
+        if (pageName == "POS / Register") {
+            val posPage = POSPage(this)
+
+            contentBox.addView(
+                posPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
     }
 }
