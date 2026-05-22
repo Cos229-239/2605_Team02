@@ -6,6 +6,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 class POSPage(private val activity: Activity) {
+
     fun build(): LinearLayout {
 
         val page = LinearLayout(activity)
@@ -44,18 +45,11 @@ class POSPage(private val activity: Activity) {
         rightText.setTextColor(Color.BLACK)
         rightText.setPadding(30, 30, 30, 30)
 
-<<<<<<< Updated upstream
-            leftSide.addView(leftText)
-            rightPanel.addView(rightText)
-
-            page.addView(leftSide, leftParams)
-            page.addView(rightPanel, rightParams)
-=======
         leftSide.addView(leftText)
         rightPanel.addView(rightText)
+
         page.addView(leftSide, leftParams)
         page.addView(rightPanel, rightParams)
->>>>>>> Stashed changes
 
         return page
     }
