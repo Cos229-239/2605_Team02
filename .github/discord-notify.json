@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "nightly_report_kickoff": false,
+  "nightly_report_kickoff": true,
   "include": {
     "title_team": true,
     "title_action": true,
@@ -62,20 +62,20 @@
   "nightly_branches": {
     "main": false,
     "gh-pages": false,
-    "AntonioPersonal": false,
-    "dev": false,
-    "JonathanPersonal": false,
-    "PatrickPersonal": false,
-    "RobertPersonal": false
-  },
-  "weekly_branches": {
-    "main": false,
-    "gh-pages": false,
     "AntonioPersonal": true,
     "dev": true,
     "JonathanPersonal": true,
     "PatrickPersonal": false,
     "RobertPersonal": true
+  },
+  "weekly_branches": {
+    "main": false,
+    "gh-pages": false,
+    "AntonioPersonal": false,
+    "dev": false,
+    "JonathanPersonal": false,
+    "PatrickPersonal": false,
+    "RobertPersonal": false
   },
   "version": 1
 }
