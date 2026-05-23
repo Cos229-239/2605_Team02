@@ -3,6 +3,7 @@ package com.liquor.ledger
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
+import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 
@@ -11,6 +12,9 @@ class MainActivity : Activity() {
     private lateinit var mainContent: LinearLayout
     private lateinit var header: TextView
     private lateinit var contentBox: LinearLayout
+
+    private val darkBlue = Color.rgb(16, 30, 55)
+    private val lightGray = Color.rgb(245, 245, 245)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,11 +27,11 @@ class MainActivity : Activity() {
         // SIDEBAR
         val sidebar = LinearLayout(this)
         sidebar.orientation = LinearLayout.VERTICAL
-        sidebar.setBackgroundColor(Color.rgb(16, 30, 55))
+        sidebar.setBackgroundColor(darkBlue)
 
         // SIDEBAR SIZE
         val sidebarParams = LinearLayout.LayoutParams(
-            290,
+            dp(230),
             LinearLayout.LayoutParams.MATCH_PARENT
         )
 
@@ -36,7 +40,7 @@ class MainActivity : Activity() {
         title.text = "Liquor\nLedger"
         title.textSize = 22f
         title.setTextColor(Color.WHITE)
-        title.setPadding(30, 60, 20, 60)
+        title.setPadding(dp(24), dp(48), dp(16), dp(40))
 
         sidebar.addView(title)
 
@@ -66,7 +70,7 @@ class MainActivity : Activity() {
         setContentView(root)
 
         // DEFAULT PAGE
-        showPage("POS / Register")
+        loadPage("POS / Register")
     }
 
     private fun makeTab(text: String): TextView {
@@ -75,47 +79,46 @@ class MainActivity : Activity() {
         val tab = TextView(this)
 
         tab.text = text
-        tab.textSize = 18f
+        tab.textSize = 16f
+        tab.gravity = Gravity.CENTER_VERTICAL
+        tab.setPadding(dp(28), dp(18), dp(16), dp(18))
         tab.setTextColor(Color.WHITE)
-
-        // TAB SPACING
-        tab.setPadding(35, 20, 20, 20)
 
         // TAB CLICK EVENT
         tab.setOnClickListener {
-            showPage(text)
+            loadPage(text)
         }
 
         return tab
     }
 
-    private fun showPage(pageName: String) {
+    private fun loadPage(pageName: String) {
 
         // CLEAR OLD PAGE
         mainContent.removeAllViews()
 
         // PAGE HEADER
         header = TextView(this)
-
         header.text = pageName
         header.textSize = 32f
         header.setTextColor(Color.BLACK)
-        header.setPadding(50, 50, 0, 20)
+        header.setPadding(dp(32), dp(32), 0, dp(16))
 
         // CONTENT BOX
         contentBox = LinearLayout(this)
-
         contentBox.orientation = LinearLayout.VERTICAL
-        contentBox.setBackgroundColor(Color.WHITE)
+        contentBox.setBackgroundColor(lightGray)
+        contentBox.setPadding(dp(20), dp(20), dp(20), dp(20))
 
         // CONTENT BOX SIZE
         val boxParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            900
+            0,
+            1f
         )
 
         // CONTENT BOX MARGINS
-        boxParams.setMargins(40, 20, 40, 40)
+        boxParams.setMargins(dp(24), dp(10), dp(24), dp(24))
 
         // ADD HEADER AND CONTENT BOX
         mainContent.addView(header)
@@ -123,14 +126,19 @@ class MainActivity : Activity() {
 
         if (pageName == "POS / Register") {
             val posPage = POSPage(this)
+            contentBox.addView(posPage.build())
+        } else {
+            val pageText = TextView(this)
+            pageText.text = "$pageName screen will go here"
+            pageText.textSize = 18f
+            pageText.setTextColor(Color.DKGRAY)
+            pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
 
-            contentBox.addView(
-                posPage.build(),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                )
-            )
+            contentBox.addView(pageText)
         }
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 }
