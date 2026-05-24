@@ -53,6 +53,7 @@
   "branches": {
     "main": false,
     "gh-pages": false,
+    "AlejandroPersonal": true,
     "AntonioPersonal": true,
     "dev": true,
     "JonathanPersonal": true,
@@ -62,6 +63,7 @@
   "nightly_branches": {
     "main": false,
     "gh-pages": false,
+    "AlejandroPersonal": false,
     "AntonioPersonal": true,
     "dev": false,
     "JonathanPersonal": true,
@@ -71,6 +73,7 @@
   "weekly_branches": {
     "main": false,
     "gh-pages": false,
+    "AlejandroPersonal": true,
     "AntonioPersonal": false,
     "dev": false,
     "JonathanPersonal": false,
