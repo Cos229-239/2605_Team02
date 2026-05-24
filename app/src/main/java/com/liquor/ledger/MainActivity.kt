@@ -127,6 +127,11 @@ class MainActivity : Activity() {
         if (pageName == "POS / Register") {
             val posPage = POSPage(this)
             contentBox.addView(posPage.build())
+
+        } else if (pageName == "Settings") {
+            val settingsPage = SettingsPage(this)
+            contentBox.addView(settingsPage.build())
+
         } else {
             val pageText = TextView(this)
             pageText.text = "$pageName screen will go here"
