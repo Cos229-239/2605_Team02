@@ -74,16 +74,16 @@
       "nightly": false,
       "weekly": true,
       "diverged": true,
-      "mention": false,
+      "mention": true,
       "owner_name": "Alejandro Figueroa Mayoral",
       "owner_discord_user_id": "755606228134133870"
     },
     "AntonioPersonal": {
       "push": true,
       "nightly": true,
-      "weekly": false,
+      "weekly": true,
       "diverged": true,
-      "mention": false,
+      "mention": true,
       "owner_name": "Antonio Vega",
       "owner_discord_user_id": "317130530023931914"
     },
@@ -92,7 +92,7 @@
       "nightly": false,
       "weekly": false,
       "diverged": true,
-      "mention": false,
+      "mention": true,
       "owner_name": "",
       "owner_discord_user_id": ""
     },
@@ -101,7 +101,7 @@
       "nightly": true,
       "weekly": false,
       "diverged": true,
-      "mention": false,
+      "mention": true,
       "owner_name": "Jonathan Smith",
       "owner_discord_user_id": "922570697698594846"
     },
@@ -117,9 +117,9 @@
     "RobertPersonal": {
       "push": true,
       "nightly": true,
-      "weekly": false,
+      "weekly": true,
       "diverged": true,
-      "mention": false,
+      "mention": true,
       "owner_name": "Robert Kearney",
       "owner_discord_user_id": "196814032638836736"
     }
@@ -138,11 +138,11 @@
     "main": false,
     "gh-pages": false,
     "AlejandroPersonal": true,
-    "AntonioPersonal": false,
+    "AntonioPersonal": true,
     "dev": false,
     "JonathanPersonal": false,
     "PatrickPersonal": false,
-    "RobertPersonal": false
+    "RobertPersonal": true
   },
   "version": 1
 }
