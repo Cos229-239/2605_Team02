@@ -25,15 +25,19 @@ class AuthRepository {
             // Look up employee by ID in Firestore
             val snapshot = db
                 .collection("employees")
-                .whereEqualTo("employeeId", employeeId)
                 .get()
                 .await()
 
-            if (snapshot.isEmpty) {
+            val matchingDoc = snapshot.documents.firstOrNull { doc ->
+                val fullId = doc.getString("employeeId") ?: ""
+                fullId.endsWith(employeeId)
+            }
+
+            if (matchingDoc == null) {
                 return Result.failure(Exception("Employee ID not found"))
             }
 
-            val doc = snapshot.documents[0]
+            val doc = matchingDoc
             val email = doc.getString("email")
                 ?: return Result.failure(Exception("No email on file"))
 

@@ -1,229 +1,285 @@
 package com.liquor.ledger
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
+import android.os.Bundle
+import android.view.Gravity
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import com.liquor.ledger.firebase.AuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-// LoginScreen is the first screen employees see when opening the app
-// It takes an Employee ID and password instead of email and password
-// On successful login it stores the employee in SessionManager
+// LoginActivity is the first screen employees see when opening the app
 
-@Composable
-fun LoginScreen(onLoginSuccess: (Employee) -> Unit) {
+class LoginActivity : Activity() {
 
-    // Variables that hold the current values typed into the input fields
-    var employeeId by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    // Auth repository handles the Employee ID login logic
+    private val authRepository = AuthRepository()
 
-    // Used to launch the login coroutine when the button is clicked
-    val scope = rememberCoroutineScope()
+    // UI elements declared
+    private lateinit var employeeIdInput: EditText
+    private lateinit var passwordInput: EditText
+    private lateinit var errorText: TextView
+    private lateinit var loginButton: Button
+    private lateinit var progressBar: ProgressBar
 
-    // Create one instance of AuthRepository for this screen
-    val authRepository = remember { AuthRepository() }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    // Full screen horizontal layout
-    Row(modifier = Modifier.fillMaxSize())
-    {
-
-        Box(
-            modifier = Modifier
-                .width(350.dp)
-                .fillMaxHeight()
-                .background(Color(0xFF101E37)),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally)
-            {
-
-                Text(
-                    text = "Liquor Ledger",
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Business Tracker",
-                    color = Color(0xFF9CA3AF),
-                    fontSize = 14.sp
-                )
-            }
+        // If already logged in skip login and go straight to MainActivity
+        if (authRepository.currentUser != null) {
+            goToMain()
+            return
         }
 
+        val root = LinearLayout(this)
+        root.orientation = LinearLayout.HORIZONTAL
+        root.setBackgroundColor(Color.WHITE)
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White),
-            contentAlignment = Alignment.Center
+        val leftPanel = LinearLayout(this)
+        leftPanel.orientation = LinearLayout.VERTICAL
+        leftPanel.setBackgroundColor(Color.rgb(16, 30, 55))
+        leftPanel.gravity = Gravity.CENTER
+
+        val leftParams = LinearLayout.LayoutParams(
+            dp(280),
+            LinearLayout.LayoutParams.MATCH_PARENT
         )
-        {
-            Card(
-                modifier = Modifier.width(400.dp),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(40.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Login form title
-                    Text(
-                        text = "Employee Login",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = "Sign in with your Employee ID",
-                        fontSize = 14.sp,
-                        color = Color(0xFF6B7280)
-                    )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+        // App title
+        val appTitle = TextView(this)
+        appTitle.text = "Liquor\nLedger"
+        appTitle.textSize = 28f
+        appTitle.setTextColor(Color.WHITE)
+        appTitle.gravity = Gravity.CENTER
+        appTitle.setTypeface(null, Typeface.BOLD)
+        appTitle.setPadding(dp(20), 0, dp(20), dp(8))
 
-                    // Employee ID input field
-                    OutlinedTextField(
-                        value = employeeId,
-                        onValueChange = { employeeId = it },
-                        label = { Text("Employee ID") },
-                        placeholder = { Text("e.g. EMP-2024-0001") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+        // Subtitle
+        val appSubtitle = TextView(this)
+        appSubtitle.text = "Business Tracker"
+        appSubtitle.textSize = 14f
+        appSubtitle.setTextColor(Color.rgb(156, 163, 175))
+        appSubtitle.gravity = Gravity.CENTER
 
-                    // Password input field
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password
-                        )
-                    )
+        leftPanel.addView(appTitle)
+        leftPanel.addView(appSubtitle)
 
-                    // Error message — only shows when there is an error
-                    if (errorMessage.isNotEmpty())
-                    {
-                        Text(
-                            text = errorMessage,
-                            color = Color(0xFFEF4444),
-                            fontSize = 13.sp
-                        )
+        // Right side login form
+        val rightPanel = LinearLayout(this)
+        rightPanel.orientation = LinearLayout.VERTICAL
+        rightPanel.gravity = Gravity.CENTER
+        rightPanel.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        val rightParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            1f
+        )
+
+        // Login card container
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.setBackgroundColor(Color.WHITE)
+        card.setPadding(dp(40), dp(40), dp(40), dp(40))
+
+        val cardParams = LinearLayout.LayoutParams(
+            dp(380),
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        // Login title
+        val loginTitle = TextView(this)
+        loginTitle.text = "Employee Login"
+        loginTitle.textSize = 24f
+        loginTitle.setTextColor(Color.BLACK)
+        loginTitle.setTypeface(null, Typeface.BOLD)
+
+        // Login subtitle
+        val loginSubtitle = TextView(this)
+        loginSubtitle.text = "Sign in with your Employee ID"
+        loginSubtitle.textSize = 14f
+        loginSubtitle.setTextColor(Color.rgb(107, 114, 128))
+        loginSubtitle.setPadding(0, dp(4), 0, dp(24))
+
+        // Employee ID label
+        val idLabel = TextView(this)
+        idLabel.text = "Employee ID"
+        idLabel.textSize = 14f
+        idLabel.setTextColor(Color.rgb(55, 65, 81))
+        idLabel.setPadding(0, 0, 0, dp(6))
+
+        // Employee ID input field
+        employeeIdInput = EditText(this)
+        employeeIdInput.hint = "e.g. 0001"
+        employeeIdInput.textSize = 15f
+        employeeIdInput.setTextColor(Color.BLACK)
+        employeeIdInput.setHintTextColor(Color.LTGRAY)
+        employeeIdInput.setPadding(dp(12), dp(12), dp(12), dp(12))
+        employeeIdInput.setBackgroundColor(Color.rgb(243, 244, 246))
+
+        val inputParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        inputParams.setMargins(0, 0, 0, dp(16))
+
+        // Password label
+        val passwordLabel = TextView(this)
+        passwordLabel.text = "Password"
+        passwordLabel.textSize = 14f
+        passwordLabel.setTextColor(Color.rgb(55, 65, 81))
+        passwordLabel.setPadding(0, 0, 0, dp(6))
+
+        // Password input field
+        // Hides the password characters as dots
+        passwordInput = EditText(this)
+        passwordInput.hint = "Enter your password"
+        passwordInput.inputType = 129
+        passwordInput.textSize = 15f
+        passwordInput.setTextColor(Color.BLACK)
+        passwordInput.setHintTextColor(Color.LTGRAY)
+        passwordInput.setPadding(dp(12), dp(12), dp(12), dp(12))
+        passwordInput.setBackgroundColor(Color.rgb(243, 244, 246))
+
+        val passwordParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        passwordParams.setMargins(0, 0, 0, dp(8))
+
+        // Error message hidden until there is an error
+        errorText = TextView(this)
+        errorText.text = ""
+        errorText.textSize = 13f
+        errorText.setTextColor(Color.rgb(239, 68, 68))
+        errorText.visibility = View.GONE
+
+        val errorParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        errorParams.setMargins(0, 0, 0, dp(16))
+
+        // Loading spinner hidden until login is in progress
+        progressBar = ProgressBar(this)
+        progressBar.visibility = View.GONE
+
+        val progressParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        progressParams.gravity = Gravity.CENTER_HORIZONTAL
+        progressParams.setMargins(0, dp(8), 0, dp(8))
+
+        // Sign In button
+        loginButton = Button(this)
+        loginButton.text = "Sign In"
+        loginButton.textSize = 16f
+        loginButton.setTextColor(Color.WHITE)
+        loginButton.setBackgroundColor(Color.rgb(45, 95, 255))
+
+        val buttonParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            dp(50)
+        )
+        buttonParams.setMargins(0, dp(8), 0, 0)
+
+        // Button click attempt login
+        loginButton.setOnClickListener {
+            attemptLogin()
+        }
+
+        // Add all views to card
+        card.addView(loginTitle)
+        card.addView(loginSubtitle)
+        card.addView(idLabel)
+        card.addView(employeeIdInput, inputParams)
+        card.addView(passwordLabel)
+        card.addView(passwordInput, passwordParams)
+        card.addView(errorText, errorParams)
+        card.addView(progressBar, progressParams)
+        card.addView(loginButton, buttonParams)
+
+        rightPanel.addView(card, cardParams)
+
+        // Add panels to root
+        root.addView(leftPanel, leftParams)
+        root.addView(rightPanel, rightParams)
+
+        setContentView(root)
+    }
+
+    // Handles the login attempt when Sign In is clicked
+    private fun attemptLogin() {
+        val employeeId = employeeIdInput.text.toString().trim()
+        val password = passwordInput.text.toString()
+
+        // Validate fields are not empty
+        if (employeeId.isEmpty() || password.isEmpty()) {
+            showError("Please enter your Employee ID and password")
+            return
+        }
+
+        // Show loading state
+        setLoading(true)
+
+        // Launch login in background thread so UI doesn't freeze
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = authRepository.loginWithEmployeeId(employeeId, password)
+
+            // Switch back to main thread to update UI
+            withContext(Dispatchers.Main) {
+                setLoading(false)
+                result.onSuccess { employee ->
+                    // Save employee to session
+                    SessionManager.currentEmployee = employee
+                    // Go to main app
+                    goToMain()
+                }
+                result.onFailure { error ->
+                    val message = when {
+                        error.message?.contains("Employee ID not found") == true ->
+                            "Employee ID not found"
+                        error.message?.contains("password") == true ->
+                            "Incorrect password"
+                        else -> "Login failed. Please try again."
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Sign In button
-                    // Shows a loading spinner while login is in progress
-                    // Disabled while loading to prevent double taps
-                    Button(
-                        onClick =
-                            {
-                            // Validate that fields are not empty
-                            if (employeeId.isBlank() || password.isBlank()) {
-                                errorMessage = "Please enter your Employee ID and password"
-                                return@Button
-                            }
-
-                            // Start the login process
-                            isLoading = true
-                            errorMessage = ""
-
-                            // Launch login in a coroutine
-                            scope.launch {
-                                val result = authRepository.loginWithEmployeeId(
-                                    employeeId.trim(),
-                                    password
-                                )
-                                isLoading = false
-
-                                // Handle success
-                                result.onSuccess { employee ->
-                                    // Save the logged in employee to SessionManager
-                                    SessionManager.currentEmployee = employee
-                                    onLoginSuccess(employee)
-                                }
-
-                                // Handle failure
-                                result.onFailure { error ->
-                                    errorMessage = when {
-                                        error.message?.contains("Employee ID not found") == true ->
-                                            "Employee ID not found"
-                                        error.message?.contains("password") == true ->
-                                            "Incorrect password"
-                                        else ->
-                                            "Login failed. Please try again."
-                                    }
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2D5FFF)
-                        ),
-                        enabled = !isLoading
-                    ) {
-                        // Show spinner while loading
-                        if (isLoading)
-                        {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        else
-                        {
-                            Text(
-                                text = "Sign In",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
+                    showError(message)
                 }
             }
         }
+    }
+
+    // Shows an error message below the password field
+    private fun showError(message: String) {
+        errorText.text = message
+        errorText.visibility = View.VISIBLE
+    }
+
+    // Shows or hides the loading spinner and disables the button while loading
+    private fun setLoading(loading: Boolean) {
+        loginButton.isEnabled = !loading
+        progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        errorText.visibility = View.GONE
+    }
+
+    // Navigates to MainActivity after successful login
+    private fun goToMain() {
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 }
