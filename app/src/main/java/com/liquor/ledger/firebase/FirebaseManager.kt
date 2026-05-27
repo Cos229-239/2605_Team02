@@ -1,5 +1,5 @@
 // This file is the central access point for all Firebase services in the app.
-/*
+
 
 package com.liquor.ledger.firebase
 
@@ -21,4 +21,4 @@ object FirebaseManager
     val db: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
 }
-*/
+
