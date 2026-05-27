@@ -22,6 +22,11 @@ package com.liquor.ledger
             leftSide.orientation = LinearLayout.VERTICAL
             leftSide.setBackgroundColor(Color.rgb(245, 247, 250))
 
+            leftSide.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+
             val leftParams = LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -107,7 +112,7 @@ package com.liquor.ledger
             val searchParams = LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                2f
+                3f
             )
 
             val qtyBox = EditText(activity)
@@ -116,9 +121,8 @@ package com.liquor.ledger
             qtyBox.setSingleLine(true)
 
             val smallInputParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
+                140,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
 
             smallInputParams.setMargins(10, 0, 0, 0)
@@ -154,6 +158,130 @@ package com.liquor.ledger
 
             leftSide.addView(entryRow, entryRowParams)
 
+            val cartBox = LinearLayout(activity)
+            cartBox.orientation = LinearLayout.VERTICAL
+            cartBox.setPadding(30, 20, 30, 20)
+            cartBox.setBackgroundColor(Color.WHITE)
+
+            val cartBoxParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+
+            cartBoxParams.setMargins(0, 10, 0, 10)
+
+            val cartHeader = LinearLayout(activity)
+            cartHeader.orientation = LinearLayout.HORIZONTAL
+            cartHeader.setPadding(10, 10, 10, 10)
+
+            val productHeader = TextView(activity)
+            productHeader.text = "Product"
+            productHeader.textSize = 15f
+            productHeader.setTextColor(Color.BLACK)
+
+            val qtyHeader = TextView(activity)
+            qtyHeader.text = "Qty"
+            qtyHeader.textSize = 15f
+            qtyHeader.setTextColor(Color.BLACK)
+
+            val priceHeader = TextView(activity)
+            priceHeader.text = "Price"
+            priceHeader.textSize = 15f
+            priceHeader.setTextColor(Color.BLACK)
+
+            val discountHeader = TextView(activity)
+            discountHeader.text = "Disc %"
+            discountHeader.textSize = 15f
+            discountHeader.setTextColor(Color.BLACK)
+
+            val taxHeader = TextView(activity)
+            taxHeader.text = "Tax %"
+            taxHeader.textSize = 15f
+            taxHeader.setTextColor(Color.BLACK)
+
+            val totalHeader = TextView(activity)
+            totalHeader.text = "Line Total"
+            totalHeader.textSize = 15f
+            totalHeader.setTextColor(Color.BLACK)
+
+            val wideColumn = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                2f
+            )
+
+            val smallColumn = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
+            cartHeader.addView(productHeader, wideColumn)
+            cartHeader.addView(qtyHeader, smallColumn)
+            cartHeader.addView(priceHeader, smallColumn)
+            cartHeader.addView(discountHeader, smallColumn)
+            cartHeader.addView(taxHeader, smallColumn)
+            cartHeader.addView(totalHeader, smallColumn)
+
+            val emptyCartText = TextView(activity)
+            emptyCartText.text = "No items in cart"
+            emptyCartText.textSize = 16f
+            emptyCartText.setTextColor(Color.GRAY)
+            emptyCartText.setPadding(10, 40, 10, 10)
+
+            cartBox.addView(cartHeader)
+            cartBox.addView(emptyCartText)
+
+            val totalsRow = LinearLayout(activity)
+            totalsRow.orientation = LinearLayout.HORIZONTAL
+            totalsRow.setPadding(30, 20, 30, 20)
+            totalsRow.setBackgroundColor(Color.WHITE)
+            totalsRow.elevation = 8f
+
+            leftSide.addView(cartBox, cartBoxParams)
+
+            val totalsRowParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            totalsRowParams.setMargins(0, 10, 0, 0)
+
+            val subtotalText = TextView(activity)
+            subtotalText.text = "Subtotal: $0.00"
+            subtotalText.textSize = 16f
+            subtotalText.setTextColor(Color.BLACK)
+
+            val taxText = TextView(activity)
+            taxText.text = "Tax: $0.00"
+            taxText.textSize = 16f
+            taxText.setTextColor(Color.BLACK)
+
+            val totalText = TextView(activity)
+            totalText.text = "Total: $0.00"
+            totalText.textSize = 20f
+            totalText.setTextColor(Color.BLACK)
+
+            val totalsTextParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
+            val newTransactionButton = Button(activity)
+            newTransactionButton.text = "New Transaction"
+
+            val completeTransactionButton = Button(activity)
+            completeTransactionButton.text = "Complete Transaction"
+
+            totalsRow.addView(subtotalText, totalsTextParams)
+            totalsRow.addView(taxText, totalsTextParams)
+            totalsRow.addView(totalText, totalsTextParams)
+            totalsRow.addView(newTransactionButton)
+            totalsRow.addView(completeTransactionButton)
+
+            leftSide.addView(totalsRow, totalsRowParams)
 
             val rightPanel = LinearLayout(activity)
             rightPanel.orientation = LinearLayout.VERTICAL
@@ -177,7 +305,6 @@ package com.liquor.ledger
             rightText.setTextColor(Color.BLACK)
             rightText.setPadding(30, 30, 30, 30)
 
-            leftSide.addView(leftText)
             rightPanel.addView(rightText)
             page.addView(leftSide, leftParams)
             page.addView(rightPanel, rightParams)

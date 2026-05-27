@@ -119,7 +119,13 @@ class MainActivity : Activity() {
         if (pageName == "POS / Register") {
 
             val posPage = POSPage(this)
-            contentBox.addView(posPage.build())
+            contentBox.addView(
+                posPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
         }
 
         else {
