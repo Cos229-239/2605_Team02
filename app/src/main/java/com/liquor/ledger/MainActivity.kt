@@ -13,6 +13,8 @@ class MainActivity : Activity() {
     private lateinit var header: TextView
     private lateinit var contentBox: LinearLayout
 
+    private var reportsExpanded = false
+
     private val darkBlue = Color.rgb(16, 30, 55)
     private val lightGray = Color.rgb(245, 245, 245)
 
@@ -47,7 +49,7 @@ class MainActivity : Activity() {
         // SIDEBAR TABS
         sidebar.addView(makeTab("POS / Register"))
         sidebar.addView(makeTab("Inventory"))
-        sidebar.addView(makeTab("Reports"))
+        sidebar.addView(makeReportsTab(sidebar))
         sidebar.addView(makeTab("Settings"))
 
         // MAIN CONTENT AREA
@@ -90,6 +92,45 @@ class MainActivity : Activity() {
         }
 
         return tab
+
+    }
+
+    private fun makeReportsTab(sidebar: LinearLayout): TextView {
+
+        val tab = makeTab("Reports")
+
+        tab.setOnClickListener {
+
+            reportsExpanded = !reportsExpanded
+
+            sidebar.removeAllViews()
+
+            // APP TITLE
+            val title = TextView(this)
+            title.text = "Liquor\nLedger"
+            title.textSize = 22f
+            title.setTextColor(Color.WHITE)
+            title.setPadding(dp(24), dp(48), dp(16), dp(40))
+
+            sidebar.addView(title)
+
+            // SIDEBAR TABS
+            sidebar.addView(makeTab("POS / Register"))
+            sidebar.addView(makeTab("Inventory"))
+            sidebar.addView(makeReportsTab(sidebar))
+
+            if (reportsExpanded) {
+                sidebar.addView(makeTab("   Sales Analytics"))
+                sidebar.addView(makeTab("   Sales Report"))
+                sidebar.addView(makeTab("   Inventory Report"))
+                sidebar.addView(makeTab("   Inventory Alert"))
+            }
+
+            sidebar.addView(makeTab("Settings"))
+
+        }
+
+        return tab
     }
 
     private fun loadPage(pageName: String) {
@@ -125,6 +166,7 @@ class MainActivity : Activity() {
         mainContent.addView(contentBox, boxParams)
 
         if (pageName == "POS / Register") {
+
             val posPage = POSPage(this)
             contentBox.addView(posPage.build())
 
