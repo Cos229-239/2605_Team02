@@ -1,49 +1,59 @@
-// This file handles all user authentication for the app.
-// Any screen that needs to log in or log out a user will use this class.
-
 package com.liquor.ledger.firebase
 
-// FirebaseUser is the currently logged-in user
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-
-// Used to suspend functions for async Firebase operations
+import com.google.firebase.firestore.FirebaseFirestore
+import com.liquor.ledger.Employee
 import kotlinx.coroutines.tasks.await
 
-class AuthRepository
-{
+class AuthRepository {
 
-    // Gets the auth instance from FirebaseManager
-    private val auth = FirebaseManager.auth
+    // Get auth and db instances from FirebaseManager
+    private val auth: FirebaseAuth = FirebaseManager.auth
+    private val db: FirebaseFirestore = FirebaseManager.db
 
-    // Returns the currently logged-in user
-    // Returns null if no one is logged in
+    // Returns the currently logged-in user or null
     val currentUser: FirebaseUser?
         get() = auth.currentUser
 
-    // Logs in a user with their email and password
-    // suspend runs asynchronously without freezing the UI
-    suspend fun login(email: String, password: String): Result<FirebaseUser>
-    {
-
-        return try
-        {
-
-            val result = auth
-                .signInWithEmailAndPassword(email, password)
+    // Login using Employee ID and password
+    suspend fun loginWithEmployeeId(
+        employeeId: String,
+        password: String
+    ): Result<Employee> {
+        return try {
+            // Look up employee by ID in Firestore
+            val snapshot = db
+                .collection("employees")
+                .whereEqualTo("employeeId", employeeId)
+                .get()
                 .await()
-            Result.success(result.user!!)
 
-        }
+            if (snapshot.isEmpty) {
+                return Result.failure(Exception("Employee ID not found"))
+            }
 
-        catch (e: Exception)
-        {
+            val doc = snapshot.documents[0]
+            val email = doc.getString("email")
+                ?: return Result.failure(Exception("No email on file"))
 
+            val employee = Employee(
+                employeeId = doc.getString("employeeId") ?: "",
+                name = doc.getString("name") ?: "",
+                position = doc.getString("position") ?: "Cashier",
+                email = email,
+                uid = doc.getString("uid") ?: ""
+            )
+
+            // Sign in with Firebase Auth
+            auth.signInWithEmailAndPassword(email, password).await()
+
+            Result.success(employee)
+
+        } catch (e: Exception) {
             Result.failure(e)
-
         }
     }
 
-    // Logs out the currently logged-in user
     fun logout() = auth.signOut()
-
 }
