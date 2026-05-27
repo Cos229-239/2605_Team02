@@ -177,7 +177,7 @@ class MainActivity : Activity() {
             )
         }
 
-        } else if (pageName == "Settings") {
+    else if (pageName == "Settings") {
             val settingsPage = SettingsPage(this)
             contentBox.addView(settingsPage.build())
 
