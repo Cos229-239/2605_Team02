@@ -305,7 +305,96 @@ package com.liquor.ledger
             rightText.setTextColor(Color.BLACK)
             rightText.setPadding(30, 30, 30, 30)
 
-            rightPanel.addView(rightText)
+            rightPanel.setPadding(24, 24, 24, 24)
+
+            val paymentTitle = TextView(activity)
+            paymentTitle.text = "Payment"
+            paymentTitle.textSize = 24f
+            paymentTitle.setTextColor(Color.BLACK)
+            paymentTitle.setPadding(0, 0, 0, 20)
+
+            val remainingBalanceLabel = TextView(activity)
+            remainingBalanceLabel.text = "Remaining Balance"
+            remainingBalanceLabel.textSize = 14f
+            remainingBalanceLabel.setTextColor(Color.GRAY)
+
+            val remainingBalanceAmount = TextView(activity)
+            remainingBalanceAmount.text = "$0.00"
+            remainingBalanceAmount.textSize = 34f
+            remainingBalanceAmount.setTextColor(Color.BLACK)
+            remainingBalanceAmount.setPadding(0, 0, 0, 30)
+
+            val paymentAmountLabel = TextView(activity)
+            paymentAmountLabel.text = "Payment Amount"
+            paymentAmountLabel.textSize = 14f
+            paymentAmountLabel.setTextColor(Color.GRAY)
+
+            val paymentAmountBox = EditText(activity)
+            paymentAmountBox.hint = "Enter amount"
+            paymentAmountBox.textSize = 18f
+            paymentAmountBox.setSingleLine(true)
+
+            rightPanel.addView(paymentTitle)
+            rightPanel.addView(remainingBalanceLabel)
+            rightPanel.addView(remainingBalanceAmount)
+            rightPanel.addView(paymentAmountLabel)
+            rightPanel.addView(paymentAmountBox)
+
+            val cashButtonsGrid = LinearLayout(activity)
+            cashButtonsGrid.orientation = LinearLayout.VERTICAL
+
+            val cashGridParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            cashGridParams.setMargins(0, 30, 0, 30)
+
+            val cashRow1 = LinearLayout(activity)
+            cashRow1.orientation = LinearLayout.HORIZONTAL
+
+            val fiveButton = Button(activity)
+            fiveButton.text = "$5"
+
+            val tenButton = Button(activity)
+            tenButton.text = "$10"
+
+            val twentyButton = Button(activity)
+            twentyButton.text = "$20"
+
+            val cashRow2 = LinearLayout(activity)
+            cashRow2.orientation = LinearLayout.HORIZONTAL
+
+            val fiftyButton = Button(activity)
+            fiftyButton.text = "$50"
+
+            val hundredButton = Button(activity)
+            hundredButton.text = "$100"
+
+            val exactButton = Button(activity)
+            exactButton.text = "FULL"
+
+            val cashButtonParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
+            cashButtonParams.setMargins(6, 6, 6, 6)
+
+            cashRow1.addView(fiveButton, cashButtonParams)
+            cashRow1.addView(tenButton, cashButtonParams)
+            cashRow1.addView(twentyButton, cashButtonParams)
+
+            cashRow2.addView(fiftyButton, cashButtonParams)
+            cashRow2.addView(hundredButton, cashButtonParams)
+            cashRow2.addView(exactButton, cashButtonParams)
+
+            cashButtonsGrid.addView(cashRow1)
+            cashButtonsGrid.addView(cashRow2)
+
+            rightPanel.addView(cashButtonsGrid, cashGridParams)
+
             page.addView(leftSide, leftParams)
             page.addView(rightPanel, rightParams)
 
