@@ -305,13 +305,13 @@ package com.liquor.ledger
             rightText.setTextColor(Color.BLACK)
             rightText.setPadding(30, 30, 30, 30)
 
-            rightPanel.setPadding(24, 24, 24, 24)
+            rightPanel.setPadding(18, 14, 18, 14)
 
             val paymentTitle = TextView(activity)
             paymentTitle.text = "Payment"
             paymentTitle.textSize = 24f
             paymentTitle.setTextColor(Color.BLACK)
-            paymentTitle.setPadding(0, 0, 0, 20)
+            paymentTitle.setPadding(0, 0, 0, 8)
 
             val remainingBalanceLabel = TextView(activity)
             remainingBalanceLabel.text = "Remaining Balance"
@@ -322,7 +322,7 @@ package com.liquor.ledger
             remainingBalanceAmount.text = "$0.00"
             remainingBalanceAmount.textSize = 34f
             remainingBalanceAmount.setTextColor(Color.BLACK)
-            remainingBalanceAmount.setPadding(0, 0, 0, 30)
+            remainingBalanceAmount.setPadding(0, 0, 0, 12)
 
             val paymentAmountLabel = TextView(activity)
             paymentAmountLabel.text = "Payment Amount"
@@ -348,7 +348,7 @@ package com.liquor.ledger
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
 
-            cashGridParams.setMargins(0, 30, 0, 30)
+            cashGridParams.setMargins(0, 8, 0, 7)
 
             val cashRow1 = LinearLayout(activity)
             cashRow1.orientation = LinearLayout.HORIZONTAL
@@ -374,13 +374,15 @@ package com.liquor.ledger
             val exactButton = Button(activity)
             exactButton.text = "FULL"
 
+            val cashButtonColor = Color.rgb(107, 142, 115)
+
             val cashButtonParams = LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
             )
 
-            cashButtonParams.setMargins(6, 6, 6, 6)
+            cashButtonParams.setMargins(6, 1, 6, 1)
 
             cashRow1.addView(fiveButton, cashButtonParams)
             cashRow1.addView(tenButton, cashButtonParams)
@@ -390,10 +392,153 @@ package com.liquor.ledger
             cashRow2.addView(hundredButton, cashButtonParams)
             cashRow2.addView(exactButton, cashButtonParams)
 
+            fiveButton.setBackgroundColor(cashButtonColor)
+            tenButton.setBackgroundColor(cashButtonColor)
+            twentyButton.setBackgroundColor(cashButtonColor)
+            fiftyButton.setBackgroundColor(cashButtonColor)
+            hundredButton.setBackgroundColor(cashButtonColor)
+            exactButton.setBackgroundColor(cashButtonColor)
+
+            fiveButton.setTextColor(Color.WHITE)
+            tenButton.setTextColor(Color.WHITE)
+            twentyButton.setTextColor(Color.WHITE)
+            fiftyButton.setTextColor(Color.WHITE)
+            hundredButton.setTextColor(Color.WHITE)
+            exactButton.setTextColor(Color.WHITE)
+
             cashButtonsGrid.addView(cashRow1)
             cashButtonsGrid.addView(cashRow2)
 
             rightPanel.addView(cashButtonsGrid, cashGridParams)
+
+            val keypadGrid = LinearLayout(activity)
+            keypadGrid.orientation = LinearLayout.VERTICAL
+
+            val keypadParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            keypadParams.setMargins(0, 0, 0, 5)
+
+            val keypadButtonParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
+            keypadButtonParams.setMargins(4, 1, 4, 1)
+
+            val keypadRow1 = LinearLayout(activity)
+            keypadRow1.orientation = LinearLayout.HORIZONTAL
+
+            val button1 = Button(activity)
+            button1.text = "1"
+
+            val button2 = Button(activity)
+            button2.text = "2"
+
+            val button3 = Button(activity)
+            button3.text = "3"
+
+            keypadRow1.addView(button1, keypadButtonParams)
+            keypadRow1.addView(button2, keypadButtonParams)
+            keypadRow1.addView(button3, keypadButtonParams)
+
+            val keypadRow2 = LinearLayout(activity)
+            keypadRow2.orientation = LinearLayout.HORIZONTAL
+
+            val button4 = Button(activity)
+            button4.text = "4"
+
+            val button5 = Button(activity)
+            button5.text = "5"
+
+            val button6 = Button(activity)
+            button6.text = "6"
+
+            keypadRow2.addView(button4, keypadButtonParams)
+            keypadRow2.addView(button5, keypadButtonParams)
+            keypadRow2.addView(button6, keypadButtonParams)
+
+            val keypadRow3 = LinearLayout(activity)
+            keypadRow3.orientation = LinearLayout.HORIZONTAL
+
+            val button7 = Button(activity)
+            button7.text = "7"
+
+            val button8 = Button(activity)
+            button8.text = "8"
+
+            val button9 = Button(activity)
+            button9.text = "9"
+
+            keypadRow3.addView(button7, keypadButtonParams)
+            keypadRow3.addView(button8, keypadButtonParams)
+            keypadRow3.addView(button9, keypadButtonParams)
+
+            val keypadRow4 = LinearLayout(activity)
+            keypadRow4.orientation = LinearLayout.HORIZONTAL
+
+            val decimalButton = Button(activity)
+            decimalButton.text = "."
+
+            val button0 = Button(activity)
+            button0.text = "0"
+
+            val backspaceButton = Button(activity)
+            backspaceButton.text = "⌫"
+
+            keypadRow4.addView(decimalButton, keypadButtonParams)
+            keypadRow4.addView(button0, keypadButtonParams)
+            keypadRow4.addView(backspaceButton, keypadButtonParams)
+
+            keypadGrid.addView(keypadRow1)
+            keypadGrid.addView(keypadRow2)
+            keypadGrid.addView(keypadRow3)
+            keypadGrid.addView(keypadRow4)
+
+            rightPanel.addView(keypadGrid, keypadParams)
+
+            val clearAmountButton = Button(activity)
+            clearAmountButton.text = "Clear Amount"
+
+            val applyPaymentButton = Button(activity)
+            applyPaymentButton.text = "Apply Payment"
+
+            val completeSaleButton = Button(activity)
+            completeSaleButton.text = "Complete Sale"
+
+            val cancelTransactionButton = Button(activity)
+            cancelTransactionButton.text = "Cancel Transaction"
+
+            clearAmountButton.setBackgroundColor(
+                Color.rgb(255, 165, 0)
+            )
+
+            applyPaymentButton.setBackgroundColor(
+                Color.rgb(46, 204, 113)
+            )
+
+            completeSaleButton.setBackgroundColor(
+                Color.rgb(231, 76, 60)
+            )
+
+            clearAmountButton.setTextColor(Color.WHITE)
+            applyPaymentButton.setTextColor(Color.WHITE)
+            completeSaleButton.setTextColor(Color.WHITE)
+
+            val actionButtonParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            actionButtonParams.setMargins(0, 3, 0, 3)
+
+            rightPanel.addView(clearAmountButton, actionButtonParams)
+            rightPanel.addView(applyPaymentButton, actionButtonParams)
+            rightPanel.addView(completeSaleButton, actionButtonParams)
+            rightPanel.addView(cancelTransactionButton, actionButtonParams)
 
             page.addView(leftSide, leftParams)
             page.addView(rightPanel, rightParams)
