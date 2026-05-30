@@ -168,7 +168,6 @@ class MainActivity : Activity() {
         if (pageName == "POS / Register") {
 
             val posPage = POSPage(this)
-
             contentBox.addView(
                 posPage.build(),
                 LinearLayout.LayoutParams(
@@ -176,38 +175,13 @@ class MainActivity : Activity() {
                     LinearLayout.LayoutParams.MATCH_PARENT
                 )
             )
-
         }
-        else if (pageName == "Reports" || pageName == "   Sales Analytics") {
 
-            val reportsPage = ReportsPage(this)
+    else if (pageName == "Settings") {
+            val settingsPage = SettingsPage(this)
+            contentBox.addView(settingsPage.build())
 
-            contentBox.addView(
-                reportsPage.build(),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                )
-            )
-
-        }
-        else if (
-            pageName == "   Sales Report" ||
-            pageName == "   Inventory Report" ||
-            pageName == "   Inventory Alert"
-        ) {
-
-            val blankPage = TextView(this)
-
-            blankPage.text = "$pageName coming soon"
-            blankPage.textSize = 22f
-            blankPage.setTextColor(Color.DKGRAY)
-            blankPage.setPadding(dp(20), dp(20), dp(20), dp(20))
-
-            contentBox.addView(blankPage)
-
-        }
-        else {
+        } else {
             val pageText = TextView(this)
             pageText.text = "$pageName screen will go here"
             pageText.textSize = 18f
