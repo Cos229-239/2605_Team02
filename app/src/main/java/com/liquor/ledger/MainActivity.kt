@@ -49,6 +49,9 @@ class MainActivity : Activity() {
         // SIDEBAR TABS
         sidebar.addView(makeTab("POS / Register"))
         sidebar.addView(makeTab("Inventory"))
+        if (SessionManager.currentEmployee?.position == "Manager") {
+            sidebar.addView(makeTab("Purchase Orders"))
+        }
         sidebar.addView(makeReportsTab(sidebar))
         sidebar.addView(makeTab("Settings"))
 
@@ -117,6 +120,12 @@ class MainActivity : Activity() {
             // SIDEBAR TABS
             sidebar.addView(makeTab("POS / Register"))
             sidebar.addView(makeTab("Inventory"))
+
+            if (SessionManager.currentEmployee?.position == "Manager") {
+                sidebar.addView(makeTab("Purchase Orders"))
+                sidebar.addView(makeReportsTab(sidebar))
+            }
+
             sidebar.addView(makeReportsTab(sidebar))
 
             if (reportsExpanded) {
@@ -195,27 +204,31 @@ class MainActivity : Activity() {
             pageName == "   Sales Report" ||
             pageName == "   Inventory Report" ||
             pageName == "   Inventory Alert"
-        ) {
+        )
 
-            val blankPage = TextView(this)
-
-            blankPage.text = "$pageName coming soon"
-            blankPage.textSize = 22f
-            blankPage.setTextColor(Color.DKGRAY)
-            blankPage.setPadding(dp(20), dp(20), dp(20), dp(20))
-
-            contentBox.addView(blankPage)
-
+        else if (pageName == "Inventory") {
+            val inventoryPage = InventoryPage(this)
+            contentBox.addView(
+                inventoryPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
         }
-        else {
-            val pageText = TextView(this)
-            pageText.text = "$pageName screen will go here"
-            pageText.textSize = 18f
-            pageText.setTextColor(Color.DKGRAY)
-            pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
 
-            contentBox.addView(pageText)
+        else if (pageName == "Purchase Orders") {
+            val purchaseOrdersPage = PurchaseOrdersPage(this)
+            contentBox.addView(
+                purchaseOrdersPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
         }
+
+
     }
 
     private fun dp(value: Int): Int {
