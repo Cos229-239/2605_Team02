@@ -190,9 +190,9 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // Removed orderBy since date field has mixed types in Firestore
+                // Sorting is handled in Kotlin after loading instead
                 val snapshot = db.collection("purchaseOrders")
-                    .orderBy("date",
-                        com.google.firebase.firestore.Query.Direction.DESCENDING)
                     .get()
                     .await()
 
@@ -201,17 +201,24 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     if (currentFilter != "All" && status != currentFilter) {
                         null
                     } else {
-                        // Get items array from Firestore
                         @Suppress("UNCHECKED_CAST")
                         val items = doc.get("items") as? List<Map<String, Any>> ?: emptyList()
-                        val timestamp = doc.getTimestamp("date")
 
-                        val formattedDate = timestamp?.let {
-                            java.text.SimpleDateFormat(
-                                "MMM dd yyyy",
-                                java.util.Locale.getDefault()
-                            ).format(it.toDate())
-                        } ?: ""
+                        // Handle both Timestamp and String date formats
+                        // Old POs stored date as a string, new ones store as Timestamp
+                        val formattedDate = try {
+                            val timestamp = doc.getTimestamp("date")
+                            if (timestamp != null) {
+                                java.text.SimpleDateFormat(
+                                    "yyyy-MM-dd",
+                                    java.util.Locale.getDefault()
+                                ).format(timestamp.toDate())
+                            } else {
+                                doc.getString("date") ?: ""
+                            }
+                        } catch (e: Exception) {
+                            doc.getString("date") ?: ""
+                        }
 
                         mapOf(
                             "docId" to doc.id,
@@ -226,9 +233,13 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     }
                 }
 
+                // Sort by PO number descending so newest POs appear first
+                // PO-0005 will appear before PO-0004 etc
+                val sortedOrders = orders.sortedByDescending { it["poNumber"] }
+
                 withContext(Dispatchers.Main) {
                     poListContainer.removeAllViews()
-                    if (orders.isEmpty()) {
+                    if (sortedOrders.isEmpty()) {
                         val emptyText = TextView(activity)
                         emptyText.text = "No purchase orders found"
                         emptyText.textSize = 14f
@@ -236,7 +247,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
                         emptyText.setPadding(dp(16), dp(16), dp(16), dp(16))
                         poListContainer.addView(emptyText)
                     } else {
-                        orders.forEach { order ->
+                        sortedOrders.forEach { order ->
                             poListContainer.addView(makePORow(order))
                         }
                     }
@@ -272,7 +283,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
         row.addView(makeRowCell(order["poNumber"] ?: "", 1f))
         row.addView(makeRowCell(order["vendor"] ?: "", 2f))
         row.addView(makeRowCell(order["date"] ?: "", 1f))
-        row.addView(makeRowCell("$${order["total"]}", 1f))
+        row.addView(makeRowCell("$${"%.2f".format(order["total"]?.toDoubleOrNull() ?: 0.0)}", 1f))
         row.addView(makeStatusCell(order["status"] ?: ""))
 
         row.setOnClickListener { showDetailPanel(order) }
@@ -345,7 +356,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     dateText.setPadding(0, 0, 0, dp(4))
 
                     val totalText = TextView(activity)
-                    totalText.text = "Total: $${order["total"]}"
+                    totalText.text = "Total: $${"%.2f".format(order["total"]?.toDoubleOrNull() ?: 0.0)}"
                     totalText.textSize = 16f
                     totalText.setTextColor(Color.BLACK)
                     totalText.setTypeface(null, Typeface.BOLD)
