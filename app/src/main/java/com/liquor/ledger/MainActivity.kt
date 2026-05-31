@@ -177,6 +177,19 @@ class MainActivity : Activity() {
             )
         }
 
+        else if (pageName == "   Sales Analytics") {
+
+            val reportsPage = ReportsPage(this)
+
+            contentBox.addView(
+                reportsPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+
     else if (pageName == "Settings") {
             val settingsPage = SettingsPage(this)
             contentBox.addView(settingsPage.build())
