@@ -228,6 +228,19 @@ class MainActivity : Activity() {
             )
         }
 
+        else if (pageName == "Settings") {
+            val settingsPage = SettingsPage(this)
+            contentBox.addView(settingsPage.build())
+
+        } else {
+            val pageText = TextView(this)
+            pageText.text = "$pageName screen will go here"
+            pageText.textSize = 18f
+            pageText.setTextColor(Color.DKGRAY)
+            pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
+
+            contentBox.addView(pageText)
+        }
 
     }
 
