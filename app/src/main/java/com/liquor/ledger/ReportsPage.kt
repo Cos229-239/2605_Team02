@@ -214,7 +214,7 @@ class BarChartView(
                 left + barWidth / 2f,
                 height - 30f,
                 textPaint
-                )
-            }
+            )
         }
     }
+}
