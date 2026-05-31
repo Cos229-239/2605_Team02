@@ -233,7 +233,6 @@ class MainActivity : Activity() {
 
         } else if (
             pageName == "   Sales Report" ||
-            pageName == "   Inventory Report" ||
             pageName == "   Inventory Alert"
         ) {
 
@@ -268,8 +267,21 @@ class MainActivity : Activity() {
                     LinearLayout.LayoutParams.MATCH_PARENT
                 )
             )
+        }
+        else if (pageName == "   Inventory Report") {
 
-        } else if (pageName == "Settings") {
+            val inventoryReportPage = InventoryReportPage(this)
+
+            contentBox.addView(
+                inventoryReportPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+
+        else if (pageName == "Settings") {
 
             /*
              * SettingsPage callback
