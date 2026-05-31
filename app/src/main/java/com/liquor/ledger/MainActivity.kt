@@ -9,6 +9,8 @@ import android.widget.TextView
 
 class MainActivity : Activity() {
 
+    private lateinit var root: LinearLayout
+    private lateinit var sidebar: LinearLayout
     private lateinit var mainContent: LinearLayout
     private lateinit var header: TextView
     private lateinit var contentBox: LinearLayout
@@ -18,18 +20,31 @@ class MainActivity : Activity() {
     private val darkBlue = Color.rgb(16, 30, 55)
     private val lightGray = Color.rgb(245, 245, 245)
 
+    /*
+     * SharedPreferences
+     *
+     * Reads the same saved settings that SettingsPage writes.
+     * This allows Dark Mode and Colorblind Mode to affect MainActivity.
+     */
+    private val prefs by lazy {
+        getSharedPreferences("settings_prefs", MODE_PRIVATE)
+    }
+
+    private val KEY_COLORBLIND_MODE = "colorblind_mode"
+    private val KEY_DARK_MODE = "dark_mode"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // ROOT LAYOUT
-        val root = LinearLayout(this)
+        root = LinearLayout(this)
         root.orientation = LinearLayout.HORIZONTAL
-        root.setBackgroundColor(Color.WHITE)
+        root.setBackgroundColor(getRootBackgroundColor())
 
         // SIDEBAR
-        val sidebar = LinearLayout(this)
+        sidebar = LinearLayout(this)
         sidebar.orientation = LinearLayout.VERTICAL
-        sidebar.setBackgroundColor(darkBlue)
+        sidebar.setBackgroundColor(getSidebarColor())
 
         // SIDEBAR SIZE
         val sidebarParams = LinearLayout.LayoutParams(
@@ -37,28 +52,10 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams.MATCH_PARENT
         )
 
-        // APP TITLE
-        val title = TextView(this)
-        title.text = "Liquor\nLedger"
-        title.textSize = 22f
-        title.setTextColor(Color.WHITE)
-        title.setPadding(dp(24), dp(48), dp(16), dp(40))
-
-        sidebar.addView(title)
-
-        // SIDEBAR TABS
-        sidebar.addView(makeTab("POS / Register"))
-        sidebar.addView(makeTab("Inventory"))
-        if (SessionManager.currentEmployee?.position == "Manager") {
-            sidebar.addView(makeTab("Purchase Orders"))
-        }
-        sidebar.addView(makeReportsTab(sidebar))
-        sidebar.addView(makeTab("Settings"))
-
         // MAIN CONTENT AREA
         mainContent = LinearLayout(this)
         mainContent.orientation = LinearLayout.VERTICAL
-        mainContent.setBackgroundColor(Color.WHITE)
+        mainContent.setBackgroundColor(getMainBackgroundColor())
 
         // MAIN CONTENT SIZE
         val mainParams = LinearLayout.LayoutParams(
@@ -74,13 +71,63 @@ class MainActivity : Activity() {
         // SET SCREEN CONTENT
         setContentView(root)
 
+        // BUILD SIDEBAR
+        buildSidebar()
+
         // DEFAULT PAGE
         loadPage("POS / Register")
     }
 
+    /*
+     * buildSidebar()
+     *
+     * Builds the sidebar navigation.
+     * This is used on startup and whenever Reports is expanded/collapsed.
+     */
+    private fun buildSidebar() {
+
+        // CLEAR OLD SIDEBAR ITEMS
+        sidebar.removeAllViews()
+
+        // APPLY CURRENT SIDEBAR COLOR
+        sidebar.setBackgroundColor(getSidebarColor())
+
+        // APP TITLE
+        val title = TextView(this)
+        title.text = "Liquor\nLedger"
+        title.textSize = 22f
+        title.setTextColor(Color.WHITE)
+        title.setPadding(dp(24), dp(48), dp(16), dp(40))
+
+        sidebar.addView(title)
+
+        // SIDEBAR TABS
+        sidebar.addView(makeTab("POS / Register"))
+        sidebar.addView(makeTab("Inventory"))
+
+        if (SessionManager.currentEmployee?.position == "Manager") {
+            sidebar.addView(makeTab("Purchase Orders"))
+        }
+
+        sidebar.addView(makeReportsTab())
+
+        if (reportsExpanded) {
+            sidebar.addView(makeTab("   Sales Analytics"))
+            sidebar.addView(makeTab("   Sales Report"))
+            sidebar.addView(makeTab("   Inventory Report"))
+            sidebar.addView(makeTab("   Inventory Alert"))
+        }
+
+        sidebar.addView(makeTab("Settings"))
+    }
+
+    /*
+     * makeTab()
+     *
+     * Creates a sidebar tab.
+     */
     private fun makeTab(text: String): TextView {
 
-        // TAB TEXT
         val tab = TextView(this)
 
         tab.text = text
@@ -89,75 +136,61 @@ class MainActivity : Activity() {
         tab.setPadding(dp(28), dp(18), dp(16), dp(18))
         tab.setTextColor(Color.WHITE)
 
-        // TAB CLICK EVENT
         tab.setOnClickListener {
             loadPage(text)
         }
 
         return tab
-
     }
 
-    private fun makeReportsTab(sidebar: LinearLayout): TextView {
+    /*
+     * makeReportsTab()
+     *
+     * Creates the Reports tab.
+     * Clicking it expands/collapses the report submenu.
+     */
+    private fun makeReportsTab(): TextView {
 
-        val tab = makeTab("Reports")
+        val tab = TextView(this)
+
+        tab.text = "Reports"
+        tab.textSize = 16f
+        tab.gravity = Gravity.CENTER_VERTICAL
+        tab.setPadding(dp(28), dp(18), dp(16), dp(18))
+        tab.setTextColor(Color.WHITE)
 
         tab.setOnClickListener {
-
             reportsExpanded = !reportsExpanded
-
-            sidebar.removeAllViews()
-
-            // APP TITLE
-            val title = TextView(this)
-            title.text = "Liquor\nLedger"
-            title.textSize = 22f
-            title.setTextColor(Color.WHITE)
-            title.setPadding(dp(24), dp(48), dp(16), dp(40))
-
-            sidebar.addView(title)
-
-            // SIDEBAR TABS
-            sidebar.addView(makeTab("POS / Register"))
-            sidebar.addView(makeTab("Inventory"))
-
-            if (SessionManager.currentEmployee?.position == "Manager") {
-                sidebar.addView(makeTab("Purchase Orders"))
-                sidebar.addView(makeReportsTab(sidebar))
-            }
-
-            sidebar.addView(makeReportsTab(sidebar))
-
-            if (reportsExpanded) {
-                sidebar.addView(makeTab("   Sales Analytics"))
-                sidebar.addView(makeTab("   Sales Report"))
-                sidebar.addView(makeTab("   Inventory Report"))
-                sidebar.addView(makeTab("   Inventory Alert"))
-            }
-
-            sidebar.addView(makeTab("Settings"))
-
+            buildSidebar()
         }
 
         return tab
     }
 
+    /*
+     * loadPage()
+     *
+     * Clears the old content and loads the selected page.
+     */
     private fun loadPage(pageName: String) {
 
         // CLEAR OLD PAGE
         mainContent.removeAllViews()
 
+        // APPLY CURRENT APP THEME
+        applyAppTheme()
+
         // PAGE HEADER
         header = TextView(this)
         header.text = pageName
         header.textSize = 32f
-        header.setTextColor(Color.BLACK)
+        header.setTextColor(getHeaderTextColor())
         header.setPadding(dp(32), dp(32), 0, dp(16))
 
         // CONTENT BOX
         contentBox = LinearLayout(this)
         contentBox.orientation = LinearLayout.VERTICAL
-        contentBox.setBackgroundColor(lightGray)
+        contentBox.setBackgroundColor(getContentBoxColor())
         contentBox.setPadding(dp(20), dp(20), dp(20), dp(20))
 
         // CONTENT BOX SIZE
@@ -186,8 +219,7 @@ class MainActivity : Activity() {
                 )
             )
 
-        }
-        else if (pageName == "Reports" || pageName == "   Sales Analytics") {
+        } else if (pageName == "Reports" || pageName == "   Sales Analytics") {
 
             val reportsPage = ReportsPage(this)
 
@@ -199,15 +231,24 @@ class MainActivity : Activity() {
                 )
             )
 
-        }
-        else if (
+        } else if (
             pageName == "   Sales Report" ||
             pageName == "   Inventory Report" ||
             pageName == "   Inventory Alert"
-        )
+        ) {
 
-        else if (pageName == "Inventory") {
+            val pageText = TextView(this)
+            pageText.text = "$pageName screen will go here"
+            pageText.textSize = 18f
+            pageText.setTextColor(getBodyTextColor())
+            pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
+
+            contentBox.addView(pageText)
+
+        } else if (pageName == "Inventory") {
+
             val inventoryPage = InventoryPage(this)
+
             contentBox.addView(
                 inventoryPage.build(),
                 LinearLayout.LayoutParams(
@@ -215,10 +256,11 @@ class MainActivity : Activity() {
                     LinearLayout.LayoutParams.MATCH_PARENT
                 )
             )
-        }
 
-        else if (pageName == "Purchase Orders") {
+        } else if (pageName == "Purchase Orders") {
+
             val purchaseOrdersPage = PurchaseOrdersPage(this)
+
             contentBox.addView(
                 purchaseOrdersPage.build(),
                 LinearLayout.LayoutParams(
@@ -226,24 +268,139 @@ class MainActivity : Activity() {
                     LinearLayout.LayoutParams.MATCH_PARENT
                 )
             )
-        }
 
-        else if (pageName == "Settings") {
-            val settingsPage = SettingsPage(this)
+        } else if (pageName == "Settings") {
+
+            /*
+             * SettingsPage callback
+             *
+             * When Dark Mode or Colorblind Mode changes,
+             * SettingsPage can tell MainActivity to refresh.
+             */
+            val settingsPage = SettingsPage(this) {
+                applyAppTheme()
+                buildSidebar()
+                loadPage("Settings")
+            }
+
             contentBox.addView(settingsPage.build())
 
         } else {
+
             val pageText = TextView(this)
             pageText.text = "$pageName screen will go here"
             pageText.textSize = 18f
-            pageText.setTextColor(Color.DKGRAY)
+            pageText.setTextColor(getBodyTextColor())
             pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
 
             contentBox.addView(pageText)
         }
-
     }
 
+    /*
+     * Checks if Dark Mode is enabled.
+     */
+    private fun isDarkModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_DARK_MODE, false)
+    }
+
+    /*
+     * Checks if Colorblind Mode is enabled.
+     */
+    private fun isColorblindModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_COLORBLIND_MODE, false)
+    }
+
+    /*
+     * Root background color.
+     */
+    private fun getRootBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(18, 18, 18)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    /*
+     * Main content background color.
+     */
+    private fun getMainBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(24, 24, 24)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    /*
+     * Sidebar color.
+     *
+     * Colorblind Mode uses a stronger accessible blue.
+     */
+    private fun getSidebarColor(): Int {
+        return when {
+            isColorblindModeEnabled() -> Color.rgb(0, 90, 150)
+            isDarkModeEnabled() -> Color.rgb(10, 20, 35)
+            else -> darkBlue
+        }
+    }
+
+    /*
+     * Content box color.
+     */
+    private fun getContentBoxColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(38, 38, 38)
+        } else {
+            lightGray
+        }
+    }
+
+    /*
+     * Header text color.
+     */
+    private fun getHeaderTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.WHITE
+        } else {
+            Color.BLACK
+        }
+    }
+
+    /*
+     * Body/placeholder text color.
+     */
+    private fun getBodyTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.LTGRAY
+        } else {
+            Color.DKGRAY
+        }
+    }
+
+    /*
+     * applyAppTheme()
+     *
+     * Applies Dark Mode / Colorblind Mode to the app shell.
+     */
+    private fun applyAppTheme() {
+        root.setBackgroundColor(getRootBackgroundColor())
+        sidebar.setBackgroundColor(getSidebarColor())
+        mainContent.setBackgroundColor(getMainBackgroundColor())
+
+        if (::header.isInitialized) {
+            header.setTextColor(getHeaderTextColor())
+        }
+
+        if (::contentBox.isInitialized) {
+            contentBox.setBackgroundColor(getContentBoxColor())
+        }
+    }
+
+    /*
+     * Converts dp to pixels.
+     */
     private fun dp(value: Int): Int {
         return (value * resources.displayMetrics.density).toInt()
     }
