@@ -49,12 +49,7 @@ class MainActivity : Activity() {
         // SIDEBAR TABS
         sidebar.addView(makeTab("POS / Register"))
         sidebar.addView(makeTab("Inventory"))
-
-        if (SessionManager.currentEmployee?.position == "Manager") {
-            sidebar.addView(makeTab("Purchase Orders"))
-            sidebar.addView(makeReportsTab(sidebar))
-        }
-
+        sidebar.addView(makeReportsTab(sidebar))
         sidebar.addView(makeTab("Settings"))
 
         // MAIN CONTENT AREA
@@ -212,29 +207,6 @@ class MainActivity : Activity() {
             contentBox.addView(blankPage)
 
         }
-
-        else if (pageName == "Purchase Orders") {
-            val purchaseOrdersPage = PurchaseOrdersPage(this)
-            contentBox.addView(
-                purchaseOrdersPage.build(),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                )
-            )
-        }
-
-        else if (pageName == "Inventory") {
-            val inventoryPage = InventoryPage(this)
-            contentBox.addView(
-                inventoryPage.build(),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                )
-            )
-        }
-
         else {
             val pageText = TextView(this)
             pageText.text = "$pageName screen will go here"
