@@ -19,11 +19,16 @@ import kotlinx.coroutines.withContext
 
 // InventoryPage displays all products from Firestore
 // Manager roles can add new products, adjust stock, and view full inventory details
-
 class InventoryPage(private val activity: Activity) {
 
     // Firestore database instance
     private val db: FirebaseFirestore = FirebaseManager.db
+
+    // Reads saved settings from SettingsPage
+    private val prefs = activity.getSharedPreferences("settings_prefs", Activity.MODE_PRIVATE)
+
+    private val KEY_COLORBLIND_MODE = "colorblind_mode"
+    private val KEY_DARK_MODE = "dark_mode"
 
     // Check if current employee is a manager
     private val isManager = SessionManager.currentEmployee?.position == "Manager"
@@ -46,14 +51,14 @@ class InventoryPage(private val activity: Activity) {
         // ROOT layout — vertical
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
-        page.setBackgroundColor(Color.WHITE)
+        page.setBackgroundColor(getPageBackgroundColor())
 
         // TOP BAR — search, filter, and buttons
         val topBar = LinearLayout(activity)
         topBar.orientation = LinearLayout.HORIZONTAL
         topBar.gravity = Gravity.CENTER_VERTICAL
         topBar.setPadding(dp(16), dp(12), dp(16), dp(12))
-        topBar.setBackgroundColor(Color.WHITE)
+        topBar.setBackgroundColor(getPageBackgroundColor())
 
         val topBarParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -64,10 +69,10 @@ class InventoryPage(private val activity: Activity) {
         val searchInput = EditText(activity)
         searchInput.hint = "Search products..."
         searchInput.textSize = 14f
-        searchInput.setTextColor(Color.BLACK)
-        searchInput.setHintTextColor(Color.LTGRAY)
+        searchInput.setTextColor(getPrimaryTextColor())
+        searchInput.setHintTextColor(getMutedTextColor())
         searchInput.setPadding(dp(12), dp(8), dp(12), dp(8))
-        searchInput.setBackgroundColor(Color.rgb(243, 244, 246))
+        searchInput.setBackgroundColor(getInputBackgroundColor())
 
         val searchParams = LinearLayout.LayoutParams(
             0,
@@ -83,7 +88,9 @@ class InventoryPage(private val activity: Activity) {
                 currentSearch = s.toString().trim()
                 loadProducts()
             }
+
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
@@ -117,6 +124,7 @@ class InventoryPage(private val activity: Activity) {
                     currentCategory = categories[position]
                     loadProducts()
                 }
+
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
             }
 
@@ -125,10 +133,10 @@ class InventoryPage(private val activity: Activity) {
 
         // Buttons — only show for managers
         if (isManager) {
-            val adjustStockBtn = makeTopButton("Adjust Stock", Color.rgb(45, 95, 255))
+            val adjustStockBtn = makeTopButton("Adjust Stock", getPrimaryActionColor())
             adjustStockBtn.setOnClickListener { showAdjustStockDialog() }
 
-            val addProductBtn = makeTopButton("+ Add Product", Color.rgb(34, 197, 94))
+            val addProductBtn = makeTopButton("+ Add Product", getPositiveColor())
             addProductBtn.setOnClickListener { showAddProductDialog() }
 
             topBar.addView(adjustStockBtn)
@@ -139,17 +147,17 @@ class InventoryPage(private val activity: Activity) {
         val statsRow = LinearLayout(activity)
         statsRow.orientation = LinearLayout.HORIZONTAL
         statsRow.setPadding(dp(16), dp(8), dp(16), dp(8))
-        statsRow.setBackgroundColor(Color.rgb(248, 249, 250))
+        statsRow.setBackgroundColor(getSectionBackgroundColor())
 
         val statsParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
 
-        totalProductsText = makeStatView("Total Products", "0", Color.BLACK)
-        inventoryValueText = makeStatView("Inventory Value", "$0.00", Color.rgb(45, 95, 255))
-        lowStockText = makeStatView("Low Stock", "0", Color.rgb(245, 158, 11))
-        outOfStockText = makeStatView("Out of Stock", "0", Color.RED)
+        totalProductsText = makeStatView("Total Products", "0", getPrimaryTextColor())
+        inventoryValueText = makeStatView("Inventory Value", "$0.00", getLinkColor())
+        lowStockText = makeStatView("Low Stock", "0", getWarningColor())
+        outOfStockText = makeStatView("Out of Stock", "0", getNegativeColor())
 
         statsRow.addView(totalProductsText)
         statsRow.addView(inventoryValueText)
@@ -161,6 +169,8 @@ class InventoryPage(private val activity: Activity) {
 
         // SCROLLABLE PRODUCT LIST
         val scrollView = ScrollView(activity)
+        scrollView.setBackgroundColor(getPageBackgroundColor())
+
         val scrollParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             0,
@@ -169,6 +179,7 @@ class InventoryPage(private val activity: Activity) {
 
         productListContainer = LinearLayout(activity)
         productListContainer.orientation = LinearLayout.VERTICAL
+        productListContainer.setBackgroundColor(getPageBackgroundColor())
 
         scrollView.addView(productListContainer)
 
@@ -192,7 +203,7 @@ class InventoryPage(private val activity: Activity) {
         val loadingText = TextView(activity)
         loadingText.text = "Loading inventory..."
         loadingText.textSize = 14f
-        loadingText.setTextColor(Color.GRAY)
+        loadingText.setTextColor(getMutedTextColor())
         loadingText.setPadding(dp(16), dp(16), dp(16), dp(16))
         productListContainer.addView(loadingText)
 
@@ -214,34 +225,43 @@ class InventoryPage(private val activity: Activity) {
                         "marginPercent" to (doc.getDouble("marginPercent")?.toString() ?: "0.0"),
                         "price" to (doc.getDouble("price")?.toString() ?: "0.0"),
                         "stockValue" to (
-                            (doc.getLong("stock")?.toDouble() ?: 0.0) *
-                                (doc.getDouble("cost") ?: 0.0)
-                            ).toString()
+                                (doc.getLong("stock")?.toDouble() ?: 0.0) *
+                                        (doc.getDouble("cost") ?: 0.0)
+                                ).toString()
                     )
                 }
 
                 // Apply search filter
-                val searched = if (currentSearch.isEmpty()) allProducts
-                else allProducts.filter { product ->
-                    product["name"]?.contains(currentSearch, ignoreCase = true) == true ||
-                        product["sku"]?.contains(currentSearch, ignoreCase = true) == true ||
-                        product["vendor"]?.contains(currentSearch, ignoreCase = true) == true
+                val searched = if (currentSearch.isEmpty()) {
+                    allProducts
+                } else {
+                    allProducts.filter { product ->
+                        product["name"]?.contains(currentSearch, ignoreCase = true) == true ||
+                                product["sku"]?.contains(currentSearch, ignoreCase = true) == true ||
+                                product["vendor"]?.contains(currentSearch, ignoreCase = true) == true
+                    }
                 }
 
                 // Apply category filter
-                val filtered = if (currentCategory == "All") searched
-                else searched.filter { it["category"] == currentCategory }
+                val filtered = if (currentCategory == "All") {
+                    searched
+                } else {
+                    searched.filter { it["category"] == currentCategory }
+                }
 
                 // Calculate stats
                 val totalProducts = allProducts.size
+
                 val inventoryValue = allProducts.sumOf {
                     it["stockValue"]?.toDoubleOrNull() ?: 0.0
                 }
+
                 val lowStock = allProducts.count { product ->
                     val stock = product["stock"]?.toIntOrNull() ?: 0
                     val reorder = product["reorderPoint"]?.toIntOrNull() ?: 0
                     stock in 1..reorder
                 }
+
                 val outOfStock = allProducts.count { product ->
                     (product["stock"]?.toIntOrNull() ?: 0) == 0
                 }
@@ -259,15 +279,17 @@ class InventoryPage(private val activity: Activity) {
                         val emptyText = TextView(activity)
                         emptyText.text = "No products found"
                         emptyText.textSize = 14f
-                        emptyText.setTextColor(Color.GRAY)
+                        emptyText.setTextColor(getMutedTextColor())
                         emptyText.setPadding(dp(16), dp(16), dp(16), dp(16))
                         productListContainer.addView(emptyText)
                     } else {
                         filtered.forEach { product ->
                             productListContainer.addView(makeProductRow(product))
+
                             // Add thin divider line between rows
                             val divider = android.view.View(activity)
-                            divider.setBackgroundColor(Color.rgb(229, 231, 235))
+                            divider.setBackgroundColor(getDividerColor())
+
                             productListContainer.addView(
                                 divider,
                                 LinearLayout.LayoutParams(
@@ -282,11 +304,13 @@ class InventoryPage(private val activity: Activity) {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     productListContainer.removeAllViews()
+
                     val errorText = TextView(activity)
                     errorText.text = "Error loading inventory: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+                    errorText.setTextColor(getNegativeColor())
                     errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
+
                     productListContainer.addView(errorText)
                 }
             }
@@ -309,18 +333,24 @@ class InventoryPage(private val activity: Activity) {
         val row = LinearLayout(activity)
         row.orientation = LinearLayout.HORIZONTAL
         row.setPadding(dp(16), dp(12), dp(16), dp(12))
-        row.setBackgroundColor(Color.WHITE)
+        row.setBackgroundColor(getPageBackgroundColor())
         row.gravity = Gravity.CENTER_VERTICAL
 
-        // Product name — clickable blue link
+        // Product name — clickable link
         val nameCell = TextView(activity)
         nameCell.text = product["name"] ?: ""
         nameCell.textSize = 14f
-        nameCell.setTextColor(Color.rgb(45, 95, 255))
-        nameCell.layoutParams = LinearLayout.LayoutParams(0,
-            LinearLayout.LayoutParams.WRAP_CONTENT, 2f)
+        nameCell.setTextColor(getLinkColor())
+        nameCell.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            2f
+        )
+
         nameCell.setOnClickListener {
-            if (isManager) showProductDetailDialog(product)
+            if (isManager) {
+                showProductDetailDialog(product)
+            }
         }
 
         row.addView(nameCell)
@@ -330,53 +360,87 @@ class InventoryPage(private val activity: Activity) {
 
         // Stock cell — colored based on status
         val stockCell = TextView(activity)
+
         val stockColor = when {
-            stock == 0 -> Color.RED
-            stock <= reorderPoint -> Color.rgb(245, 158, 11)
-            else -> Color.rgb(55, 65, 81)
+            stock == 0 -> getNegativeColor()
+            stock <= reorderPoint -> getWarningColor()
+            else -> getSecondaryTextColor()
         }
+
         val stockPrefix = when {
             stock == 0 -> "X "
             stock <= reorderPoint -> "! "
             else -> ""
         }
+
         stockCell.text = "$stockPrefix$stock"
         stockCell.textSize = 14f
         stockCell.setTextColor(stockColor)
-        stockCell.layoutParams = LinearLayout.LayoutParams(0,
-            LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        stockCell.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
         row.addView(stockCell)
 
         // Reorder point — colored if stock is at or below it
         val reorderCell = TextView(activity)
-        reorderCell.text = if (stock <= reorderPoint && stock > 0)
-            "! $reorderPoint" else reorderPoint.toString()
+
+        reorderCell.text = if (stock <= reorderPoint && stock > 0) {
+            "! $reorderPoint"
+        } else {
+            reorderPoint.toString()
+        }
+
         reorderCell.textSize = 14f
+
         reorderCell.setTextColor(
-            if (stock <= reorderPoint && stock > 0)
-                Color.rgb(245, 158, 11) else Color.rgb(55, 65, 81)
+            if (stock <= reorderPoint && stock > 0) {
+                getWarningColor()
+            } else {
+                getSecondaryTextColor()
+            }
         )
-        reorderCell.layoutParams = LinearLayout.LayoutParams(0,
-            LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+
+        reorderCell.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
         row.addView(reorderCell)
 
         row.addView(makeCell("$${product["cost"]}", 1f))
         row.addView(makeCell("${product["taxPercent"]}%", 1f))
         row.addView(makeCell("${product["marginPercent"]}%", 1f))
-        row.addView(makeCell("$${"%.2f".format(
-            product["stockValue"]?.toDoubleOrNull() ?: 0.0)}", 1f))
+
+        row.addView(
+            makeCell(
+                "$${"%.2f".format(product["stockValue"]?.toDoubleOrNull() ?: 0.0)}",
+                1f
+            )
+        )
 
         // Status cell
         val statusCell = TextView(activity)
         statusCell.text = status
         statusCell.textSize = 12f
-        statusCell.setTextColor(when (status) {
-            "Out of Stock" -> Color.RED
-            "Low Stock" -> Color.rgb(245, 158, 11)
-            else -> Color.rgb(55, 65, 81)
-        })
-        statusCell.layoutParams = LinearLayout.LayoutParams(0,
-            LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+
+        statusCell.setTextColor(
+            when (status) {
+                "Out of Stock" -> getNegativeColor()
+                "Low Stock" -> getWarningColor()
+                else -> getSecondaryTextColor()
+            }
+        )
+
+        statusCell.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
         row.addView(statusCell)
 
         return row
@@ -401,8 +465,7 @@ class InventoryPage(private val activity: Activity) {
             "Tax %" to "${product["taxPercent"]}%",
             "Margin %" to "${product["marginPercent"]}%",
             "Price" to "$${product["price"]}",
-            "Stock Value" to "$${"%.2f".format(
-                product["stockValue"]?.toDoubleOrNull() ?: 0.0)}"
+            "Stock Value" to "$${"%.2f".format(product["stockValue"]?.toDoubleOrNull() ?: 0.0)}"
         )
 
         details.forEach { (label, value) ->
@@ -413,17 +476,23 @@ class InventoryPage(private val activity: Activity) {
             val labelView = TextView(activity)
             labelView.text = "$label:"
             labelView.textSize = 14f
-            labelView.setTextColor(Color.GRAY)
+            labelView.setTextColor(getMutedTextColor())
             labelView.setTypeface(null, Typeface.BOLD)
-            labelView.layoutParams = LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            labelView.layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
 
             val valueView = TextView(activity)
             valueView.text = value
             valueView.textSize = 14f
-            valueView.setTextColor(Color.BLACK)
-            valueView.layoutParams = LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            valueView.setTextColor(getPrimaryTextColor())
+            valueView.layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
 
             row.addView(labelView)
             row.addView(valueView)
@@ -460,11 +529,14 @@ class InventoryPage(private val activity: Activity) {
 
         builder.setPositiveButton("Add Product") { _, _ ->
             val name = nameInput.text.toString().trim()
+
             if (name.isEmpty()) {
                 android.widget.Toast.makeText(
-                    activity, "Product name is required",
+                    activity,
+                    "Product name is required",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
+
                 return@setPositiveButton
             }
 
@@ -488,15 +560,18 @@ class InventoryPage(private val activity: Activity) {
 
                     withContext(Dispatchers.Main) {
                         android.widget.Toast.makeText(
-                            activity, "$name added to inventory",
+                            activity,
+                            "$name added to inventory",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
+
                         loadProducts()
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         android.widget.Toast.makeText(
-                            activity, "Error: ${e.message}",
+                            activity,
+                            "Error: ${e.message}",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -523,7 +598,7 @@ class InventoryPage(private val activity: Activity) {
         val noteText = TextView(activity)
         noteText.text = "Enter a positive number to add stock or negative to remove.\ne.g. 10 or -5"
         noteText.textSize = 12f
-        noteText.setTextColor(Color.GRAY)
+        noteText.setTextColor(getMutedTextColor())
         noteText.setPadding(0, dp(4), 0, dp(8))
         form.addView(noteText)
 
@@ -535,9 +610,11 @@ class InventoryPage(private val activity: Activity) {
 
             if (productName.isEmpty() || adjustAmount == null) {
                 android.widget.Toast.makeText(
-                    activity, "Please enter a valid product name and amount",
+                    activity,
+                    "Please enter a valid product name and amount",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
+
                 return@setPositiveButton
             }
 
@@ -552,10 +629,12 @@ class InventoryPage(private val activity: Activity) {
                     if (snapshot.isEmpty) {
                         withContext(Dispatchers.Main) {
                             android.widget.Toast.makeText(
-                                activity, "Product not found",
+                                activity,
+                                "Product not found",
                                 android.widget.Toast.LENGTH_SHORT
                             ).show()
                         }
+
                         return@launch
                     }
 
@@ -574,13 +653,15 @@ class InventoryPage(private val activity: Activity) {
                             "Stock updated: $currentStock → $newStock",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
+
                         loadProducts()
                     }
 
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         android.widget.Toast.makeText(
-                            activity, "Error: ${e.message}",
+                            activity,
+                            "Error: ${e.message}",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -597,7 +678,7 @@ class InventoryPage(private val activity: Activity) {
         val header = LinearLayout(activity)
         header.orientation = LinearLayout.HORIZONTAL
         header.setPadding(dp(16), dp(10), dp(16), dp(10))
-        header.setBackgroundColor(Color.rgb(248, 249, 250))
+        header.setBackgroundColor(getSectionBackgroundColor())
 
         val columns = listOf(
             Pair("Product", 2f),
@@ -617,10 +698,14 @@ class InventoryPage(private val activity: Activity) {
             val cell = TextView(activity)
             cell.text = text
             cell.textSize = 12f
-            cell.setTextColor(Color.rgb(107, 114, 128))
+            cell.setTextColor(getMutedTextColor())
             cell.setTypeface(null, Typeface.BOLD)
             cell.layoutParams = LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                weight
+            )
+
             header.addView(cell)
         }
 
@@ -632,9 +717,13 @@ class InventoryPage(private val activity: Activity) {
         val cell = TextView(activity)
         cell.text = text
         cell.textSize = 13f
-        cell.setTextColor(Color.rgb(55, 65, 81))
+        cell.setTextColor(getSecondaryTextColor())
         cell.layoutParams = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            weight
+        )
+
         return cell
     }
 
@@ -647,7 +736,11 @@ class InventoryPage(private val activity: Activity) {
         view.gravity = Gravity.CENTER
         view.setPadding(dp(8), dp(8), dp(8), dp(8))
         view.layoutParams = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
         return view
     }
 
@@ -665,8 +758,10 @@ class InventoryPage(private val activity: Activity) {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         params.setMargins(dp(8), 0, 0, 0)
         btn.layoutParams = params
+
         return btn
     }
 
@@ -680,22 +775,25 @@ class InventoryPage(private val activity: Activity) {
         val label = TextView(activity)
         label.text = hint
         label.textSize = 13f
-        label.setTextColor(Color.GRAY)
+        label.setTextColor(getMutedTextColor())
         label.setPadding(0, dp(8), 0, dp(2))
         parent.addView(label)
 
         val input = EditText(activity)
         input.hint = hint
         input.textSize = 14f
-        input.setTextColor(Color.BLACK)
-        input.setHintTextColor(Color.LTGRAY)
+        input.setTextColor(getPrimaryTextColor())
+        input.setHintTextColor(getMutedTextColor())
         input.setPadding(dp(8), dp(8), dp(8), dp(8))
-        input.setBackgroundColor(Color.rgb(243, 244, 246))
+        input.setBackgroundColor(getInputBackgroundColor())
+
         input.inputType = when {
             isDecimal -> android.text.InputType.TYPE_CLASS_NUMBER or
-                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                    android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+
             isNumber -> android.text.InputType.TYPE_CLASS_NUMBER or
-                android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
+                    android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
+
             else -> android.text.InputType.TYPE_CLASS_TEXT
         }
 
@@ -703,11 +801,112 @@ class InventoryPage(private val activity: Activity) {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         params.setMargins(0, 0, 0, dp(4))
         input.layoutParams = params
         parent.addView(input)
 
         return input
+    }
+
+    private fun isDarkModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_DARK_MODE, false)
+    }
+
+    private fun isColorblindModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_COLORBLIND_MODE, false)
+    }
+
+    private fun getPageBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(38, 38, 38)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    private fun getSectionBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(48, 48, 48)
+        } else {
+            Color.rgb(248, 249, 250)
+        }
+    }
+
+    private fun getInputBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(60, 60, 60)
+        } else {
+            Color.rgb(243, 244, 246)
+        }
+    }
+
+    private fun getPrimaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.WHITE
+        } else {
+            Color.BLACK
+        }
+    }
+
+    private fun getSecondaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.LTGRAY
+        } else {
+            Color.rgb(55, 65, 81)
+        }
+    }
+
+    private fun getMutedTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(180, 180, 180)
+        } else {
+            Color.GRAY
+        }
+    }
+
+    private fun getDividerColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(80, 80, 80)
+        } else {
+            Color.rgb(229, 231, 235)
+        }
+    }
+
+    private fun getLinkColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(45, 95, 255)
+        }
+    }
+
+    private fun getPrimaryActionColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(45, 95, 255)
+        }
+    }
+
+    private fun getPositiveColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(34, 197, 94)
+        }
+    }
+
+    private fun getWarningColor(): Int {
+        return Color.rgb(230, 159, 0)
+    }
+
+    private fun getNegativeColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(213, 94, 0)
+        } else {
+            Color.RED
+        }
     }
 
     // Converts dp to pixels
