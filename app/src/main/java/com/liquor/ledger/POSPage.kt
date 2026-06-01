@@ -2,17 +2,41 @@ package com.liquor.ledger
 
     import android.app.Activity
     import android.graphics.Color
+    import android.text.Editable
+    import android.text.TextWatcher
+    import android.widget.Button
+    import android.widget.EditText
     import android.widget.LinearLayout
     import android.widget.TextView
+    import android.widget.Toast
+
+    import com.liquor.ledger.firebase.FirebaseManager
+
     import java.text.SimpleDateFormat
     import java.util.Date
     import java.util.Locale
-    import android.widget.Button
-    import android.widget.EditText
+
+    import kotlinx.coroutines.CoroutineScope
+    import kotlinx.coroutines.Dispatchers
+    import kotlinx.coroutines.launch
+    import kotlinx.coroutines.tasks.await
+    import kotlinx.coroutines.withContext
 
 
-    class POSPage(private val activity: Activity) {
-        fun build(): LinearLayout {
+class POSPage(private val activity: Activity) {
+
+    private val db = FirebaseManager.db
+
+    private var selectedProductName = ""
+    private var selectedProductSku = ""
+    private var selectedProductPrice = 0.0
+    private var selectedProductTax = 0.0
+    private var selectedProductStock = 0
+    private var cartSubtotal = 0.0
+    private var cartTax = 0.0
+    private var cartTotal = 0.0
+
+    fun build(): LinearLayout {
 
             val page = LinearLayout(activity)
             page.orientation = LinearLayout.HORIZONTAL
@@ -105,6 +129,11 @@ package com.liquor.ledger
             entryRowParams.setMargins(0, 10, 0, 10)
 
             val searchBox = EditText(activity)
+
+            searchBox.setTextColor(Color.BLACK)
+            searchBox.setHintTextColor(Color.DKGRAY)
+            searchBox.setBackgroundColor(Color.rgb(245, 245, 245))
+
             searchBox.hint = "Scan or search product"
             searchBox.textSize = 16f
             searchBox.setSingleLine(true)
@@ -116,6 +145,11 @@ package com.liquor.ledger
             )
 
             val qtyBox = EditText(activity)
+
+            qtyBox.setTextColor(Color.BLACK)
+            qtyBox.setHintTextColor(Color.DKGRAY)
+            qtyBox.setBackgroundColor(Color.rgb(245, 245, 245))
+
             qtyBox.hint = "Qty"
             qtyBox.textSize = 16f
             qtyBox.setSingleLine(true)
@@ -128,16 +162,31 @@ package com.liquor.ledger
             smallInputParams.setMargins(10, 0, 0, 0)
 
             val priceBox = EditText(activity)
+
+            priceBox.setTextColor(Color.BLACK)
+            priceBox.setHintTextColor(Color.DKGRAY)
+            priceBox.setBackgroundColor(Color.rgb(245, 245, 245))
+
             priceBox.hint = "Price"
             priceBox.textSize = 16f
             priceBox.setSingleLine(true)
 
             val discountBox = EditText(activity)
+
+            discountBox.setTextColor(Color.BLACK)
+            discountBox.setHintTextColor(Color.DKGRAY)
+            discountBox.setBackgroundColor(Color.rgb(245, 245, 245))
+
             discountBox.hint = "Discount %"
             discountBox.textSize = 16f
             discountBox.setSingleLine(true)
 
             val taxBox = EditText(activity)
+
+            taxBox.setTextColor(Color.BLACK)
+            taxBox.setHintTextColor(Color.DKGRAY)
+            taxBox.setBackgroundColor(Color.rgb(245, 245, 245))
+
             taxBox.hint = "Tax %"
             taxBox.textSize = 16f
             taxBox.setSingleLine(true)
@@ -157,6 +206,23 @@ package com.liquor.ledger
             entryRow.addView(clearButton)
 
             leftSide.addView(entryRow, entryRowParams)
+
+        val suggestionList = LinearLayout(activity)
+        suggestionList.orientation = LinearLayout.VERTICAL
+        suggestionList.setBackgroundColor(Color.WHITE)
+
+        val suggestionListParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        suggestionListParams.setMargins(30, 0, 30, 10)
+
+        leftSide.addView(suggestionList, suggestionListParams)
+
+        var isSelectingProduct = false
+
+
 
             val cartBox = LinearLayout(activity)
             cartBox.orientation = LinearLayout.VERTICAL
@@ -224,6 +290,13 @@ package com.liquor.ledger
             cartHeader.addView(taxHeader, smallColumn)
             cartHeader.addView(totalHeader, smallColumn)
 
+            val removeHeader = TextView(activity)
+            removeHeader.text = "Remove"
+            removeHeader.textSize = 15f
+            removeHeader.setTextColor(Color.BLACK)
+
+            cartHeader.addView(removeHeader, smallColumn)
+
             val emptyCartText = TextView(activity)
             emptyCartText.text = "No items in cart"
             emptyCartText.textSize = 16f
@@ -233,9 +306,14 @@ package com.liquor.ledger
             cartBox.addView(cartHeader)
             cartBox.addView(emptyCartText)
 
+        val cartItemsContainer = LinearLayout(activity)
+        cartItemsContainer.orientation = LinearLayout.VERTICAL
+
+        cartBox.addView(cartItemsContainer)
+
             val totalsRow = LinearLayout(activity)
             totalsRow.orientation = LinearLayout.HORIZONTAL
-            totalsRow.setPadding(30, 20, 30, 20)
+            totalsRow.setPadding(30, 8, 30, 8)
             totalsRow.setBackgroundColor(Color.WHITE)
             totalsRow.elevation = 8f
 
@@ -260,7 +338,7 @@ package com.liquor.ledger
 
             val totalText = TextView(activity)
             totalText.text = "Total: $0.00"
-            totalText.textSize = 20f
+            totalText.textSize = 18f
             totalText.setTextColor(Color.BLACK)
 
             val totalsTextParams = LinearLayout.LayoutParams(
@@ -280,6 +358,283 @@ package com.liquor.ledger
             totalsRow.addView(totalText, totalsTextParams)
             totalsRow.addView(newTransactionButton)
             totalsRow.addView(completeTransactionButton)
+
+        fun addSelectedProductToCart() {
+
+            if (selectedProductName.isEmpty()) {
+                Toast.makeText(activity, "Select a product first", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val quantity = qtyBox.text.toString().toIntOrNull() ?: 1
+
+            if (quantity <= 0) {
+                Toast.makeText(activity, "Enter a valid quantity", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            if (selectedProductStock > 0 && quantity > selectedProductStock) {
+                Toast.makeText(activity, "Not enough stock available", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            emptyCartText.visibility = android.view.View.GONE
+
+            val lineSubtotal = selectedProductPrice * quantity
+            val lineTax = lineSubtotal * (selectedProductTax / 100)
+            val lineTotal = lineSubtotal + lineTax
+
+            cartSubtotal += lineSubtotal
+            cartTax += lineTax
+            cartTotal += lineTotal
+
+            val cartRow = LinearLayout(activity)
+            cartRow.orientation = LinearLayout.HORIZONTAL
+            cartRow.setPadding(10, 10, 10, 10)
+
+            val productCell = TextView(activity)
+            productCell.text = selectedProductName
+            productCell.textSize = 14f
+            productCell.setTextColor(Color.BLACK)
+
+            val qtyCell = TextView(activity)
+            qtyCell.text = quantity.toString()
+            qtyCell.textSize = 14f
+            qtyCell.setTextColor(Color.BLACK)
+
+            val priceCell = TextView(activity)
+            priceCell.text = "$${"%.2f".format(selectedProductPrice)}"
+            priceCell.textSize = 14f
+            priceCell.setTextColor(Color.BLACK)
+
+            val discountCell = TextView(activity)
+            discountCell.text = "0%"
+            discountCell.textSize = 14f
+            discountCell.setTextColor(Color.BLACK)
+
+            val taxCell = TextView(activity)
+            taxCell.text = "${"%.2f".format(selectedProductTax)}%"
+            taxCell.textSize = 14f
+            taxCell.setTextColor(Color.BLACK)
+
+            val totalCell = TextView(activity)
+            totalCell.text = "$${"%.2f".format(lineTotal)}"
+            totalCell.textSize = 14f
+            totalCell.setTextColor(Color.BLACK)
+
+            val removeButton = Button(activity)
+            removeButton.text = "X"
+            removeButton.textSize = 12f
+            removeButton.setTextColor(Color.WHITE)
+            removeButton.setBackgroundColor(Color.rgb(231, 76, 60))
+
+            cartRow.addView(productCell, wideColumn)
+            cartRow.addView(qtyCell, smallColumn)
+            cartRow.addView(priceCell, smallColumn)
+            cartRow.addView(discountCell, smallColumn)
+            cartRow.addView(taxCell, smallColumn)
+            cartRow.addView(totalCell, smallColumn)
+            cartRow.addView(removeButton, smallColumn)
+
+            cartItemsContainer.addView(cartRow)
+
+            removeButton.setOnClickListener {
+                cartSubtotal -= lineSubtotal
+                cartTax -= lineTax
+                cartTotal -= lineTotal
+
+                if (cartSubtotal < 0.0) cartSubtotal = 0.0
+                if (cartTax < 0.0) cartTax = 0.0
+                if (cartTotal < 0.0) cartTotal = 0.0
+
+                subtotalText.text = "Subtotal: $${"%.2f".format(cartSubtotal)}"
+                taxText.text = "Tax: $${"%.2f".format(cartTax)}"
+                totalText.text = "Total: $${"%.2f".format(cartTotal)}"
+
+                cartItemsContainer.removeView(cartRow)
+
+                if (cartItemsContainer.childCount == 0) {
+                    emptyCartText.visibility = android.view.View.VISIBLE
+                }
+            }
+
+            subtotalText.text = "Subtotal: $${"%.2f".format(cartSubtotal)}"
+            taxText.text = "Tax: $${"%.2f".format(cartTax)}"
+            totalText.text = "Total: $${"%.2f".format(cartTotal)}"
+
+            searchBox.setText("")
+            qtyBox.setText("")
+            priceBox.setText("")
+            discountBox.setText("")
+            taxBox.setText("")
+
+            selectedProductName = ""
+            selectedProductSku = ""
+            selectedProductPrice = 0.0
+            selectedProductTax = 0.0
+            selectedProductStock = 0
+        }
+
+        searchBox.addTextChangedListener(object : TextWatcher {
+
+            override fun afterTextChanged(s: Editable?) {
+
+                if (isSelectingProduct) {
+                    return
+                }
+
+                val query = s.toString().trim()
+
+                suggestionList.removeAllViews()
+
+                if (query.isEmpty()) {
+                    return
+                }
+
+                CoroutineScope(Dispatchers.IO).launch {
+
+                    try {
+
+                        val exactSkuSnapshot = db.collection("products")
+                            .whereEqualTo("sku", query)
+                            .limit(1)
+                            .get()
+                            .await()
+
+                        if (!exactSkuSnapshot.isEmpty) {
+
+                            val product = exactSkuSnapshot.documents[0]
+
+                            val name = product.getString("name") ?: query
+                            val sku = product.getString("sku") ?: ""
+                            val price = product.getDouble("price") ?: 0.0
+                            val taxPercent = product.getDouble("taxPercent") ?: 0.0
+                            val stock = product.getLong("stock")?.toInt() ?: 0
+
+                            withContext(Dispatchers.Main) {
+
+                                isSelectingProduct = true
+
+                                searchBox.setText(name)
+                                searchBox.setSelection(searchBox.text.length)
+                                priceBox.setText(price.toString())
+                                taxBox.setText(taxPercent.toString())
+
+                                selectedProductName = name
+                                selectedProductSku = sku
+                                selectedProductPrice = price
+                                selectedProductTax = taxPercent
+                                selectedProductStock = stock
+
+                                suggestionList.removeAllViews()
+
+                                addSelectedProductToCart()
+
+                                isSelectingProduct = false
+                            }
+
+                            return@launch
+                        }
+
+                        if (query.length < 2) {
+                            return@launch
+                        }
+
+                        val snapshot = db.collection("products")
+                            .get()
+                            .await()
+
+                        val matches = snapshot.documents.mapNotNull { doc ->
+
+                            val name = doc.getString("name") ?: return@mapNotNull null
+                            val sku = doc.getString("sku") ?: ""
+                            val price = doc.getDouble("price") ?: 0.0
+                            val taxPercent = doc.getDouble("taxPercent") ?: 0.0
+                            val stock = doc.getLong("stock")?.toInt() ?: 0
+
+                            mapOf(
+                                "name" to name,
+                                "sku" to sku,
+                                "price" to price.toString(),
+                                "taxPercent" to taxPercent.toString(),
+                                "stock" to stock.toString()
+                            )
+
+                        }.filter { product ->
+
+                            product["name"]?.contains(query, ignoreCase = true) == true ||
+                                    product["sku"]?.contains(query, ignoreCase = true) == true
+
+                        }.take(5)
+
+                        withContext(Dispatchers.Main) {
+
+                            suggestionList.removeAllViews()
+
+                            matches.forEach { product ->
+
+                                val suggestionItem = TextView(activity)
+                                suggestionItem.text = "${product["name"]}    $${product["price"]}"
+                                suggestionItem.textSize = 15f
+                                suggestionItem.setTextColor(Color.BLACK)
+                                suggestionItem.setPadding(16, 12, 16, 12)
+                                suggestionItem.setBackgroundColor(Color.rgb(248, 249, 250))
+
+                                suggestionItem.setOnClickListener {
+
+                                    isSelectingProduct = true
+
+                                    searchBox.setText(product["name"])
+                                    searchBox.setSelection(searchBox.text.length)
+                                    priceBox.setText(product["price"])
+                                    taxBox.setText(product["taxPercent"])
+
+                                    selectedProductName = product["name"] ?: ""
+                                    selectedProductSku = product["sku"] ?: ""
+                                    selectedProductPrice = product["price"]?.toDoubleOrNull() ?: 0.0
+                                    selectedProductTax = product["taxPercent"]?.toDoubleOrNull() ?: 0.0
+                                    selectedProductStock = product["stock"]?.toIntOrNull() ?: 0
+
+                                    suggestionList.removeAllViews()
+
+                                    addSelectedProductToCart()
+
+                                    isSelectingProduct = false
+                                }
+
+                                suggestionList.addView(suggestionItem)
+                            }
+                        }
+
+                    } catch (e: Exception) {
+
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                activity,
+                                "Product search error: ${e.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            }
+
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) {
+            }
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
+            }
+        })
 
             leftSide.addView(totalsRow, totalsRowParams)
 
@@ -539,6 +894,10 @@ package com.liquor.ledger
             rightPanel.addView(applyPaymentButton, actionButtonParams)
             rightPanel.addView(completeSaleButton, actionButtonParams)
             rightPanel.addView(cancelTransactionButton, actionButtonParams)
+
+            addButton.setOnClickListener {
+            addSelectedProductToCart()
+            }
 
             page.addView(leftSide, leftParams)
             page.addView(rightPanel, rightParams)
