@@ -3,30 +3,94 @@ package com.liquor.ledger
 // IMPORTS NEEDED FOR UI COMPONENTS
 import android.content.Context
 import android.graphics.Color
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toast
 
 /*
  * SettingsPage
+ *
+ * Builds the Settings screen programmatically.
+ *
+ * This is NOT an Activity.
+ * MainActivity creates this page and places it inside the main content box.
+ *
+ * onThemeChanged is a callback.
+ * It lets SettingsPage notify MainActivity when Dark Mode or Colorblind Mode changes,
+ * so the full app shell can refresh.
  */
-class SettingsPage(private val context: Context) {
+class SettingsPage(
+    private val context: Context,
+    private val onThemeChanged: (() -> Unit)? = null
+) {
+
+    /*
+     * SharedPreferences
+     *
+     * Saves small settings locally on the device.
+     * Each toggle is saved as true or false.
+     */
+    private val prefs = context.getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
+
+    /*
+     * Setting keys
+     *
+     * These names must match the keys MainActivity reads.
+     */
+    private val KEY_COLORBLIND_MODE = "colorblind_mode"
+    private val KEY_DARK_MODE = "dark_mode"
+    private val KEY_LOW_STOCK_ALERTS = "low_stock_alerts"
+    private val KEY_SALES_ALERTS = "sales_alerts"
+    private val KEY_SOUND_NOTIFICATIONS = "sound_notifications"
+    private val KEY_AUTO_PRINT_RECEIPTS = "auto_print_receipts"
 
     /*
      * build()
      *
-     * Creates the full Settings page layout and returns it.
-     * This layout is later added into MainActivity's content area.
+     * Creates the full Settings page layout.
      */
     fun build(): LinearLayout {
 
         // MAIN VERTICAL CONTAINER
         val layout = LinearLayout(context)
 
-        // STACK ITEMS VERTICALLY
+        // STACK ITEMS TOP TO BOTTOM
         layout.orientation = LinearLayout.VERTICAL
+
+        // BUILD THE PAGE CONTENT
+        buildSettingsContent(layout)
+
+        // RETURN COMPLETED SETTINGS PAGE
+        return layout
+    }
+
+    /*
+     * buildSettingsContent()
+     *
+     * Builds or rebuilds the Settings page.
+     *
+     * We rebuild when Dark Mode or Colorblind Mode changes
+     * so this page visually updates immediately.
+     */
+    private fun buildSettingsContent(layout: LinearLayout) {
+
+        // CLEAR OLD SETTINGS VIEWS BEFORE REBUILDING
+        layout.removeAllViews()
+
+        // READ SAVED THEME SETTINGS
+        val darkModeEnabled = prefs.getBoolean(KEY_DARK_MODE, false)
+
+        // APPLY SETTINGS PAGE BACKGROUND
+        if (darkModeEnabled) {
+            layout.setBackgroundColor(Color.rgb(30, 30, 30))
+        } else {
+            layout.setBackgroundColor(Color.WHITE)
+        }
 
         // ADD INNER PADDING
         layout.setPadding(dp(20), dp(20), dp(20), dp(20))
@@ -34,91 +98,250 @@ class SettingsPage(private val context: Context) {
         // PAGE TITLE
         layout.addView(makeTitle("Settings"))
 
-        // SETTINGS TOGGLES
-        layout.addView(makeSwitch("Colorblind Mode"))
-        layout.addView(makeSwitch("Dark Mode"))
-        layout.addView(makeSwitch("Low Stock Alerts"))
-        layout.addView(makeSwitch("Sales Alerts"))
-        layout.addView(makeSwitch("Sound Notifications"))
-        layout.addView(makeSwitch("Auto Print Receipts"))
+        // ALL SETTINGS TOGGLES
+        layout.addView(makeFunctionalSwitch("Colorblind Mode", KEY_COLORBLIND_MODE, layout))
+        layout.addView(makeFunctionalSwitch("Dark Mode", KEY_DARK_MODE, layout))
+        layout.addView(makeFunctionalSwitch("Low Stock Alerts", KEY_LOW_STOCK_ALERTS, layout))
+        layout.addView(makeFunctionalSwitch("Sales Alerts", KEY_SALES_ALERTS, layout))
+        layout.addView(makeFunctionalSwitch("Sound Notifications", KEY_SOUND_NOTIFICATIONS, layout))
+        layout.addView(makeFunctionalSwitch("Auto Print Receipts", KEY_AUTO_PRINT_RECEIPTS, layout))
 
         // TEST PRINTER BUTTON
         val testPrinterButton = Button(context)
-
-        // BUTTON LABEL
         testPrinterButton.text = "Test Printer"
 
-        // ADD BUTTON TO LAYOUT
-        layout.addView(testPrinterButton)
+        // COLORBLIND MODE USES A BLUE ACCENT
+        if (prefs.getBoolean(KEY_COLORBLIND_MODE, false)) {
+            testPrinterButton.setBackgroundColor(Color.rgb(0, 90, 150))
+            testPrinterButton.setTextColor(Color.WHITE)
+        }
 
-        // RETURN COMPLETED SETTINGS LAYOUT
-        return layout
+        // SIMULATED TEST PRINTER FUNCTIONALITY
+        testPrinterButton.setOnClickListener {
+            testPrinter()
+        }
+
+        // ADD BUTTON TO SETTINGS PAGE
+        layout.addView(testPrinterButton)
     }
 
     /*
      * makeTitle()
      *
-     * Creates and styles the page title TextView.
+     * Creates the Settings page title.
      */
     private fun makeTitle(text: String): TextView {
 
-        // CREATE TITLE TEXTVIEW
+        val darkModeEnabled = prefs.getBoolean(KEY_DARK_MODE, false)
+
         val title = TextView(context)
-
-        // SET DISPLAYED TEXT
         title.text = text
-
-        // TITLE FONT SIZE
         title.textSize = 28f
-
-        // TITLE COLOR
-        title.setTextColor(Color.BLACK)
-
-        // ALIGN TEXT TO START/LEFT
         title.gravity = Gravity.START
-
-        // ADD SPACE BELOW TITLE
         title.setPadding(0, 0, 0, dp(20))
+
+        if (darkModeEnabled) {
+            title.setTextColor(Color.WHITE)
+        } else {
+            title.setTextColor(Color.BLACK)
+        }
 
         return title
     }
 
     /*
-     * makeSwitch()
+     * makeFunctionalSwitch()
      *
-     * Creates a reusable styled switch component
-     * for application settings.
+     * Creates a switch that:
+     * 1. Loads its saved ON/OFF state
+     * 2. Saves whenever the user changes it
+     * 3. Runs behavior for that setting
      */
-    private fun makeSwitch(text: String): Switch {
+    private fun makeFunctionalSwitch(
+        text: String,
+        settingKey: String,
+        parentLayout: LinearLayout
+    ): Switch {
 
-        // CREATE SWITCH COMPONENT
+        val darkModeEnabled = prefs.getBoolean(KEY_DARK_MODE, false)
+        val colorblindModeEnabled = prefs.getBoolean(KEY_COLORBLIND_MODE, false)
+
         val settingSwitch = Switch(context)
 
-        // SET SWITCH LABEL
+        // SWITCH LABEL
         settingSwitch.text = text
 
-        // TEXT SIZE
+        // STYLE
         settingSwitch.textSize = 18f
-
-        // TEXT COLOR
-        settingSwitch.setTextColor(Color.DKGRAY)
-
-        // ADD VERTICAL SPACING
         settingSwitch.setPadding(0, dp(10), 0, dp(10))
+
+        // TEXT COLOR BASED ON SETTINGS
+        if (darkModeEnabled) {
+            settingSwitch.setTextColor(Color.WHITE)
+        } else if (colorblindModeEnabled) {
+            settingSwitch.setTextColor(Color.rgb(0, 90, 150))
+        } else {
+            settingSwitch.setTextColor(Color.DKGRAY)
+        }
+
+        // LOAD SAVED VALUE
+        settingSwitch.isChecked = prefs.getBoolean(settingKey, false)
+
+        // SAVE VALUE WHEN SWITCH CHANGES
+        settingSwitch.setOnCheckedChangeListener { _, isChecked ->
+
+            prefs.edit()
+                .putBoolean(settingKey, isChecked)
+                .apply()
+
+            handleSettingChanged(settingKey, isChecked, parentLayout)
+        }
 
         return settingSwitch
     }
 
     /*
+     * handleSettingChanged()
+     *
+     * Runs the correct behavior when a setting is toggled.
+     */
+    private fun handleSettingChanged(
+        settingKey: String,
+        isChecked: Boolean,
+        parentLayout: LinearLayout
+    ) {
+        when (settingKey) {
+
+            KEY_COLORBLIND_MODE -> {
+                showToast(
+                    if (isChecked) {
+                        "Colorblind Mode enabled"
+                    } else {
+                        "Colorblind Mode disabled"
+                    }
+                )
+
+                // Refresh SettingsPage visuals
+                buildSettingsContent(parentLayout)
+
+                // Tell MainActivity to refresh the full app shell
+                onThemeChanged?.invoke()
+            }
+
+            KEY_DARK_MODE -> {
+                showToast(
+                    if (isChecked) {
+                        "Dark Mode enabled"
+                    } else {
+                        "Dark Mode disabled"
+                    }
+                )
+
+                // Refresh SettingsPage visuals
+                buildSettingsContent(parentLayout)
+
+                // Tell MainActivity to refresh the full app shell
+                onThemeChanged?.invoke()
+            }
+
+            KEY_LOW_STOCK_ALERTS -> {
+                showToast(
+                    if (isChecked) {
+                        "Low Stock Alerts enabled"
+                    } else {
+                        "Low Stock Alerts disabled"
+                    }
+                )
+            }
+
+            KEY_SALES_ALERTS -> {
+                showToast(
+                    if (isChecked) {
+                        "Sales Alerts enabled"
+                    } else {
+                        "Sales Alerts disabled"
+                    }
+                )
+            }
+
+            KEY_SOUND_NOTIFICATIONS -> {
+                showToast(
+                    if (isChecked) {
+                        "Sound Notifications enabled"
+                    } else {
+                        "Sound Notifications disabled"
+                    }
+                )
+
+                if (isChecked) {
+                    playNotificationSound()
+                }
+            }
+
+            KEY_AUTO_PRINT_RECEIPTS -> {
+                showToast(
+                    if (isChecked) {
+                        "Auto Print Receipts enabled"
+                    } else {
+                        "Auto Print Receipts disabled"
+                    }
+                )
+            }
+        }
+    }
+
+    /*
+     * testPrinter()
+     *
+     * Simulates printer behavior for now.
+     *
+     * Later, this is where actual printer integration can go.
+     */
+    private fun testPrinter() {
+
+        val autoPrintEnabled = prefs.getBoolean(KEY_AUTO_PRINT_RECEIPTS, false)
+        val soundEnabled = prefs.getBoolean(KEY_SOUND_NOTIFICATIONS, false)
+
+        if (soundEnabled) {
+            playNotificationSound()
+        }
+
+        if (autoPrintEnabled) {
+            showToast("Auto Print is ON: sending test receipt...")
+        } else {
+            showToast("Printer test started")
+        }
+    }
+
+    /*
+     * playNotificationSound()
+     *
+     * Plays a short system beep.
+     */
+    private fun playNotificationSound() {
+        try {
+            val toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
+            toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 150)
+        } catch (e: Exception) {
+            showToast("Unable to play notification sound")
+        }
+    }
+
+    /*
+     * showToast()
+     *
+     * Shows a short popup message.
+     */
+    private fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /*
      * dp()
      *
-     * Converts density-independent pixels (dp)
-     * into actual screen pixels based on device density.
-     *
-     * This keeps UI sizing consistent across devices.
+     * Converts dp into pixels.
      */
     private fun dp(value: Int): Int {
-
         return (value * context.resources.displayMetrics.density).toInt()
     }
 }

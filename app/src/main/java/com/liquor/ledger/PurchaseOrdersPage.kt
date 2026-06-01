@@ -21,11 +21,16 @@ import kotlinx.coroutines.withContext
 // Only visible to Manager employees
 // Allows creating new POs with product line items
 // Receiving a PO automatically updates inventory stock levels
-
 class PurchaseOrdersPage(private val activity: Activity) {
 
     // Firestore database instance
     private val db: FirebaseFirestore = FirebaseManager.db
+
+    // Reads saved settings from SettingsPage
+    private val prefs = activity.getSharedPreferences("settings_prefs", Activity.MODE_PRIVATE)
+
+    private val KEY_COLORBLIND_MODE = "colorblind_mode"
+    private val KEY_DARK_MODE = "dark_mode"
 
     // Main layout containers
     private lateinit var pageLayout: LinearLayout
@@ -54,12 +59,12 @@ class PurchaseOrdersPage(private val activity: Activity) {
         // ROOT — horizontal split between list and detail panel
         pageLayout = LinearLayout(activity)
         pageLayout.orientation = LinearLayout.HORIZONTAL
-        pageLayout.setBackgroundColor(Color.WHITE)
+        pageLayout.setBackgroundColor(getPageBackgroundColor())
 
         // LEFT SIDE — PO list
         val leftSide = LinearLayout(activity)
         leftSide.orientation = LinearLayout.VERTICAL
-        leftSide.setBackgroundColor(Color.WHITE)
+        leftSide.setBackgroundColor(getPageBackgroundColor())
 
         val leftParams = LinearLayout.LayoutParams(
             0,
@@ -72,7 +77,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
         topBar.orientation = LinearLayout.HORIZONTAL
         topBar.gravity = Gravity.CENTER_VERTICAL
         topBar.setPadding(dp(16), dp(12), dp(16), dp(12))
-        topBar.setBackgroundColor(Color.WHITE)
+        topBar.setBackgroundColor(getPageBackgroundColor())
 
         val topBarParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -81,26 +86,40 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
         // Filter buttons
         val filters = listOf("All", "pending review", "submitted", "received")
+
         filters.forEach { filter ->
             val filterBtn = makeFilterButton(filter)
+
+            if (filter == currentFilter) {
+                filterBtn.setBackgroundColor(getPrimaryActionColor())
+                filterBtn.setTextColor(Color.WHITE)
+            }
+
             filterBtn.setOnClickListener {
                 currentFilter = filter
                 loadPurchaseOrders()
+
                 topBar.removeAllViews()
+
                 filters.forEach { f ->
                     val btn = makeFilterButton(f)
+
                     btn.setOnClickListener {
                         currentFilter = f
                         loadPurchaseOrders()
                     }
+
                     if (f == currentFilter) {
-                        btn.setBackgroundColor(Color.rgb(45, 95, 255))
+                        btn.setBackgroundColor(getPrimaryActionColor())
                         btn.setTextColor(Color.WHITE)
                     }
+
                     topBar.addView(btn)
                 }
+
                 topBar.addView(makeNewOrderButton())
             }
+
             topBar.addView(filterBtn)
         }
 
@@ -111,6 +130,8 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
         // SCROLLABLE LIST of PO rows
         val scrollView = ScrollView(activity)
+        scrollView.setBackgroundColor(getPageBackgroundColor())
+
         val scrollParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             0,
@@ -119,6 +140,8 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
         poListContainer = LinearLayout(activity)
         poListContainer.orientation = LinearLayout.VERTICAL
+        poListContainer.setBackgroundColor(getPageBackgroundColor())
+
         scrollView.addView(poListContainer)
 
         leftSide.addView(topBar, topBarParams)
@@ -128,7 +151,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
         // RIGHT SIDE — detail panel
         detailPanel = LinearLayout(activity)
         detailPanel.orientation = LinearLayout.VERTICAL
-        detailPanel.setBackgroundColor(Color.rgb(248, 249, 250))
+        detailPanel.setBackgroundColor(getSectionBackgroundColor())
         detailPanel.setPadding(dp(20), dp(20), dp(20), dp(20))
 
         val rightParams = LinearLayout.LayoutParams(
@@ -140,8 +163,9 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val selectText = TextView(activity)
         selectText.text = "Select an order to view details"
         selectText.textSize = 16f
-        selectText.setTextColor(Color.GRAY)
+        selectText.setTextColor(getMutedTextColor())
         selectText.gravity = Gravity.CENTER
+
         detailPanel.addView(selectText)
 
         pageLayout.addView(leftSide, leftParams)
@@ -159,16 +183,20 @@ class PurchaseOrdersPage(private val activity: Activity) {
             try {
                 val snapshot = db.collection("products").get().await()
                 val map = mutableMapOf<String, String>()
+
                 snapshot.documents.forEach { doc ->
                     val name = doc.getString("name") ?: ""
+
                     if (name.isNotEmpty()) {
                         map[name] = doc.id
                     }
                 }
+
                 withContext(Dispatchers.Main) {
                     productMap = map
                     loadPurchaseOrders()
                 }
+
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     loadPurchaseOrders()
@@ -184,34 +212,39 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val loadingText = TextView(activity)
         loadingText.text = "Loading..."
         loadingText.textSize = 14f
-        loadingText.setTextColor(Color.GRAY)
+        loadingText.setTextColor(getMutedTextColor())
         loadingText.setPadding(dp(16), dp(16), dp(16), dp(16))
         poListContainer.addView(loadingText)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val snapshot = db.collection("purchaseOrders")
-                    .orderBy("date",
-                        com.google.firebase.firestore.Query.Direction.DESCENDING)
                     .get()
                     .await()
 
                 val orders = snapshot.documents.mapNotNull { doc ->
                     val status = doc.getString("status") ?: ""
+
                     if (currentFilter != "All" && status != currentFilter) {
                         null
                     } else {
-                        // Get items array from Firestore
                         @Suppress("UNCHECKED_CAST")
                         val items = doc.get("items") as? List<Map<String, Any>> ?: emptyList()
-                        val timestamp = doc.getTimestamp("date")
 
-                        val formattedDate = timestamp?.let {
-                            java.text.SimpleDateFormat(
-                                "MMM dd yyyy",
-                                java.util.Locale.getDefault()
-                            ).format(it.toDate())
-                        } ?: ""
+                        val formattedDate = try {
+                            val timestamp = doc.getTimestamp("date")
+
+                            if (timestamp != null) {
+                                java.text.SimpleDateFormat(
+                                    "yyyy-MM-dd",
+                                    java.util.Locale.getDefault()
+                                ).format(timestamp.toDate())
+                            } else {
+                                doc.getString("date") ?: ""
+                            }
+                        } catch (e: Exception) {
+                            doc.getString("date") ?: ""
+                        }
 
                         mapOf(
                             "docId" to doc.id,
@@ -226,18 +259,33 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     }
                 }
 
+                val sortedOrders = orders.sortedByDescending { it["poNumber"] }
+
                 withContext(Dispatchers.Main) {
                     poListContainer.removeAllViews()
-                    if (orders.isEmpty()) {
+
+                    if (sortedOrders.isEmpty()) {
                         val emptyText = TextView(activity)
                         emptyText.text = "No purchase orders found"
                         emptyText.textSize = 14f
-                        emptyText.setTextColor(Color.GRAY)
+                        emptyText.setTextColor(getMutedTextColor())
                         emptyText.setPadding(dp(16), dp(16), dp(16), dp(16))
+
                         poListContainer.addView(emptyText)
                     } else {
-                        orders.forEach { order ->
+                        sortedOrders.forEach { order ->
                             poListContainer.addView(makePORow(order))
+
+                            val divider = android.view.View(activity)
+                            divider.setBackgroundColor(getDividerColor())
+
+                            poListContainer.addView(
+                                divider,
+                                LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    1
+                                )
+                            )
                         }
                     }
                 }
@@ -245,11 +293,13 @@ class PurchaseOrdersPage(private val activity: Activity) {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     poListContainer.removeAllViews()
+
                     val errorText = TextView(activity)
                     errorText.text = "Error loading orders: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+                    errorText.setTextColor(getNegativeColor())
                     errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
+
                     poListContainer.addView(errorText)
                 }
             }
@@ -261,18 +311,20 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val row = LinearLayout(activity)
         row.orientation = LinearLayout.HORIZONTAL
         row.setPadding(dp(16), dp(14), dp(16), dp(14))
-        row.setBackgroundColor(Color.WHITE)
+        row.setBackgroundColor(getPageBackgroundColor())
 
         val rowParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         rowParams.setMargins(0, 0, 0, dp(1))
+        row.layoutParams = rowParams
 
         row.addView(makeRowCell(order["poNumber"] ?: "", 1f))
         row.addView(makeRowCell(order["vendor"] ?: "", 2f))
         row.addView(makeRowCell(order["date"] ?: "", 1f))
-        row.addView(makeRowCell("$${order["total"]}", 1f))
+        row.addView(makeRowCell("$${"%.2f".format(order["total"]?.toDoubleOrNull() ?: 0.0)}", 1f))
         row.addView(makeStatusCell(order["status"] ?: ""))
 
         row.setOnClickListener { showDetailPanel(order) }
@@ -287,9 +339,13 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val cell = TextView(activity)
         cell.text = text
         cell.textSize = 14f
-        cell.setTextColor(Color.rgb(55, 65, 81))
+        cell.setTextColor(getSecondaryTextColor())
         cell.layoutParams = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            weight
+        )
+
         return cell
     }
 
@@ -302,15 +358,19 @@ class PurchaseOrdersPage(private val activity: Activity) {
         cell.setPadding(dp(8), dp(4), dp(8), dp(4))
         cell.setTextColor(getStatusColor(status))
         cell.layoutParams = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
         return cell
     }
 
     // Shows the detail panel for a selected PO
     private fun showDetailPanel(order: Map<String, String>) {
         detailPanel.removeAllViews()
+        detailPanel.setBackgroundColor(getSectionBackgroundColor())
 
-        // Fetch full PO details including items from Firestore
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val doc = db.collection("purchaseOrders")
@@ -324,30 +384,29 @@ class PurchaseOrdersPage(private val activity: Activity) {
                 withContext(Dispatchers.Main) {
                     detailPanel.removeAllViews()
 
-                    // PO Number title
                     val poTitle = TextView(activity)
                     poTitle.text = order["poNumber"] ?: ""
                     poTitle.textSize = 22f
-                    poTitle.setTextColor(Color.BLACK)
+                    poTitle.setTextColor(getPrimaryTextColor())
                     poTitle.setTypeface(null, Typeface.BOLD)
                     poTitle.setPadding(0, 0, 0, dp(4))
 
                     val vendorText = TextView(activity)
                     vendorText.text = "Vendor: ${order["vendor"]}"
                     vendorText.textSize = 16f
-                    vendorText.setTextColor(Color.rgb(55, 65, 81))
+                    vendorText.setTextColor(getSecondaryTextColor())
                     vendorText.setPadding(0, 0, 0, dp(4))
 
                     val dateText = TextView(activity)
                     dateText.text = "Date: ${order["date"]}"
                     dateText.textSize = 14f
-                    dateText.setTextColor(Color.GRAY)
+                    dateText.setTextColor(getMutedTextColor())
                     dateText.setPadding(0, 0, 0, dp(4))
 
                     val totalText = TextView(activity)
-                    totalText.text = "Total: $${order["total"]}"
+                    totalText.text = "Total: $${"%.2f".format(order["total"]?.toDoubleOrNull() ?: 0.0)}"
                     totalText.textSize = 16f
-                    totalText.setTextColor(Color.BLACK)
+                    totalText.setTextColor(getPrimaryTextColor())
                     totalText.setTypeface(null, Typeface.BOLD)
                     totalText.setPadding(0, 0, 0, dp(8))
 
@@ -363,17 +422,16 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     detailPanel.addView(totalText)
                     detailPanel.addView(statusText)
 
-                    // Line items section
                     if (items.isNotEmpty()) {
                         val itemsTitle = TextView(activity)
                         itemsTitle.text = "Items:"
                         itemsTitle.textSize = 15f
-                        itemsTitle.setTextColor(Color.BLACK)
+                        itemsTitle.setTextColor(getPrimaryTextColor())
                         itemsTitle.setTypeface(null, Typeface.BOLD)
                         itemsTitle.setPadding(0, 0, 0, dp(8))
+
                         detailPanel.addView(itemsTitle)
 
-                        // Items header
                         val itemHeader = LinearLayout(activity)
                         itemHeader.orientation = LinearLayout.HORIZONTAL
                         itemHeader.setPadding(0, 0, 0, dp(4))
@@ -387,15 +445,19 @@ class PurchaseOrdersPage(private val activity: Activity) {
                             val cell = TextView(activity)
                             cell.text = text
                             cell.textSize = 12f
-                            cell.setTextColor(Color.GRAY)
+                            cell.setTextColor(getMutedTextColor())
                             cell.setTypeface(null, Typeface.BOLD)
                             cell.layoutParams = LinearLayout.LayoutParams(
-                                0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+                                0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                weight
+                            )
+
                             itemHeader.addView(cell)
                         }
+
                         detailPanel.addView(itemHeader)
 
-                        // Item rows
                         items.forEach { item ->
                             val productName = item["productName"] as? String ?: ""
                             val qty = (item["quantity"] as? Long)?.toInt() ?: 0
@@ -415,70 +477,84 @@ class PurchaseOrdersPage(private val activity: Activity) {
                                 val cell = TextView(activity)
                                 cell.text = text
                                 cell.textSize = 13f
-                                cell.setTextColor(Color.rgb(55, 65, 81))
+                                cell.setTextColor(getSecondaryTextColor())
                                 cell.layoutParams = LinearLayout.LayoutParams(
-                                    0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+                                    0,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    weight
+                                )
+
                                 itemRow.addView(cell)
                             }
+
                             detailPanel.addView(itemRow)
                         }
 
-                        // Divider
                         val divider = android.view.View(activity)
-                        divider.setBackgroundColor(Color.rgb(229, 231, 235))
-                        detailPanel.addView(divider, LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).also {
-                            it.setMargins(0, dp(8), 0, dp(8))
-                        })
+                        divider.setBackgroundColor(getDividerColor())
+
+                        detailPanel.addView(
+                            divider,
+                            LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                dp(1)
+                            ).also {
+                                it.setMargins(0, dp(8), 0, dp(8))
+                            }
+                        )
                     }
 
-                    // Notes
                     if (!order["notes"].isNullOrEmpty()) {
                         val notesText = TextView(activity)
                         notesText.text = "Notes: ${order["notes"]}"
                         notesText.textSize = 13f
-                        notesText.setTextColor(Color.GRAY)
+                        notesText.setTextColor(getMutedTextColor())
                         notesText.setPadding(0, 0, 0, dp(16))
+
                         detailPanel.addView(notesText)
                     }
 
-                    // Action buttons based on status
                     when (order["status"]) {
                         "pending review" -> {
                             detailPanel.addView(
                                 makeActionButton(
                                     "Submit Order",
-                                    Color.rgb(45, 95, 255)
+                                    getPrimaryActionColor()
                                 ) {
                                     updatePOStatus(order["docId"] ?: "", "submitted")
                                 }
                             )
                         }
+
                         "submitted" -> {
                             detailPanel.addView(
                                 makeActionButton(
                                     "Mark as Received",
-                                    Color.rgb(34, 197, 94)
+                                    getPositiveColor()
                                 ) {
                                     receivePO(order["docId"] ?: "", items)
                                 }
                             )
                         }
+
                         "received" -> {
                             val receivedNote = TextView(activity)
                             receivedNote.text = "This order has been received"
                             receivedNote.textSize = 14f
-                            receivedNote.setTextColor(Color.rgb(34, 197, 94))
+                            receivedNote.setTextColor(getPositiveColor())
+
                             detailPanel.addView(receivedNote)
                         }
                     }
                 }
+
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     val errorText = TextView(activity)
                     errorText.text = "Error loading PO details: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+                    errorText.setTextColor(getNegativeColor())
+
                     detailPanel.addView(errorText)
                 }
             }
@@ -489,13 +565,11 @@ class PurchaseOrdersPage(private val activity: Activity) {
     private fun receivePO(docId: String, items: List<Map<String, Any>>) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Update each product's stock level
                 items.forEach { item ->
                     val productName = item["productName"] as? String ?: ""
                     val quantity = (item["quantity"] as? Long)?.toInt() ?: 0
 
                     if (productName.isNotEmpty() && quantity > 0) {
-                        // Find product by name
                         val productSnapshot = db.collection("products")
                             .whereEqualTo("name", productName)
                             .get()
@@ -506,7 +580,6 @@ class PurchaseOrdersPage(private val activity: Activity) {
                             val currentStock = productDoc.getLong("stock") ?: 0L
                             val newStock = currentStock + quantity
 
-                            // Update stock in Firestore
                             db.collection("products")
                                 .document(productDoc.id)
                                 .update("stock", newStock)
@@ -515,7 +588,6 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     }
                 }
 
-                // Update PO status to received
                 db.collection("purchaseOrders")
                     .document(docId)
                     .update("status", "received")
@@ -524,11 +596,13 @@ class PurchaseOrdersPage(private val activity: Activity) {
                 withContext(Dispatchers.Main) {
                     loadPurchaseOrders()
                     detailPanel.removeAllViews()
+
                     val successText = TextView(activity)
                     successText.text = "Order received and inventory updated"
                     successText.textSize = 16f
-                    successText.setTextColor(Color.rgb(34, 197, 94))
+                    successText.setTextColor(getPositiveColor())
                     successText.setPadding(0, dp(20), 0, 0)
+
                     detailPanel.addView(successText)
                 }
 
@@ -537,7 +611,8 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error receiving order: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+                    errorText.setTextColor(getNegativeColor())
+
                     detailPanel.addView(errorText)
                 }
             }
@@ -556,12 +631,14 @@ class PurchaseOrdersPage(private val activity: Activity) {
                 withContext(Dispatchers.Main) {
                     loadPurchaseOrders()
                 }
+
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     val errorText = TextView(activity)
                     errorText.text = "Error updating status: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+                    errorText.setTextColor(getNegativeColor())
+
                     detailPanel.addView(errorText)
                 }
             }
@@ -571,70 +648,73 @@ class PurchaseOrdersPage(private val activity: Activity) {
     // Shows the new order form in the detail panel
     private fun showNewOrderForm() {
         detailPanel.removeAllViews()
+        detailPanel.setBackgroundColor(getSectionBackgroundColor())
         lineItems.clear()
 
         val scrollView = ScrollView(activity)
+        scrollView.setBackgroundColor(getSectionBackgroundColor())
+
         val formContainer = LinearLayout(activity)
         formContainer.orientation = LinearLayout.VERTICAL
+        formContainer.setBackgroundColor(getSectionBackgroundColor())
 
         val formTitle = TextView(activity)
         formTitle.text = "New Purchase Order"
         formTitle.textSize = 20f
-        formTitle.setTextColor(Color.BLACK)
+        formTitle.setTextColor(getPrimaryTextColor())
         formTitle.setTypeface(null, Typeface.BOLD)
         formTitle.setPadding(0, 0, 0, dp(16))
 
-        // Vendor input
         val vendorLabel = makeFormLabel("Vendor *")
         val vendorInput = makeFormInput("Enter vendor name")
 
-        // Notes input
         val notesLabel = makeFormLabel("Notes (optional)")
         val notesInput = makeFormInput("Add any notes...")
 
-        // Line items section title
         val itemsTitle = TextView(activity)
         itemsTitle.text = "Add Products"
         itemsTitle.textSize = 16f
-        itemsTitle.setTextColor(Color.BLACK)
+        itemsTitle.setTextColor(getPrimaryTextColor())
         itemsTitle.setTypeface(null, Typeface.BOLD)
         itemsTitle.setPadding(0, dp(16), 0, dp(8))
 
-        // Product dropdown
         val productLabel = makeFormLabel("Product")
         val productSpinner = Spinner(activity)
+
         val productNames = listOf("Select a product") + productMap.keys.toList()
+
         val spinnerAdapter = ArrayAdapter(
             activity,
             android.R.layout.simple_spinner_item,
             productNames
         )
+
         spinnerAdapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item)
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
         productSpinner.adapter = spinnerAdapter
 
         val spinnerParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         spinnerParams.setMargins(0, 0, 0, dp(8))
         productSpinner.layoutParams = spinnerParams
 
-        // Quantity input
         val qtyLabel = makeFormLabel("Quantity")
         val qtyInput = makeFormInput("0")
         qtyInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER
 
-        // Cost per unit input
         val costLabel = makeFormLabel("Cost Per Unit ($)")
         val costInput = makeFormInput("0.00")
         costInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER or
-            android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
 
-        // Add item button
         val addItemBtn = makeActionButton(
             "+ Add Item to Order",
-            Color.rgb(107, 114, 128)
+            getMutedButtonColor()
         ) {
             val selectedProduct = productSpinner.selectedItem.toString()
             val qty = qtyInput.text.toString().toIntOrNull() ?: 0
@@ -642,69 +722,71 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
             if (selectedProduct == "Select a product") {
                 android.widget.Toast.makeText(
-                    activity, "Please select a product",
+                    activity,
+                    "Please select a product",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
+
                 return@makeActionButton
             }
 
             if (qty <= 0) {
                 android.widget.Toast.makeText(
-                    activity, "Please enter a valid quantity",
+                    activity,
+                    "Please enter a valid quantity",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
+
                 return@makeActionButton
             }
 
-            // Add to line items list
             lineItems.add(Triple(selectedProduct, qty, cost))
             updateLineItemsDisplay()
             updateTotalLabel()
 
-            // Reset inputs
             productSpinner.setSelection(0)
             qtyInput.setText("")
             costInput.setText("")
         }
 
-        // Line items display container
         val lineItemsTitle = TextView(activity)
         lineItemsTitle.text = "Order Items:"
         lineItemsTitle.textSize = 14f
-        lineItemsTitle.setTextColor(Color.BLACK)
+        lineItemsTitle.setTextColor(getPrimaryTextColor())
         lineItemsTitle.setTypeface(null, Typeface.BOLD)
         lineItemsTitle.setPadding(0, dp(12), 0, dp(4))
 
         lineItemsContainer = LinearLayout(activity)
         lineItemsContainer.orientation = LinearLayout.VERTICAL
+        lineItemsContainer.setBackgroundColor(getSectionBackgroundColor())
 
-        // Total label
         totalAmountLabel = TextView(activity)
         totalAmountLabel.text = "Total: $0.00"
         totalAmountLabel.textSize = 16f
-        totalAmountLabel.setTextColor(Color.BLACK)
+        totalAmountLabel.setTextColor(getPrimaryTextColor())
         totalAmountLabel.setTypeface(null, Typeface.BOLD)
         totalAmountLabel.setPadding(0, dp(8), 0, dp(8))
 
-        // Create PO button
         val createBtn = makeActionButton(
             "Create Purchase Order",
-            Color.rgb(34, 197, 94)
+            getPositiveColor()
         ) {
             val vendor = vendorInput.text.toString().trim()
             val notes = notesInput.text.toString().trim()
 
             if (vendor.isEmpty()) {
-                vendorLabel.setTextColor(Color.RED)
+                vendorLabel.setTextColor(getNegativeColor())
                 vendorLabel.text = "Vendor * (required)"
                 return@makeActionButton
             }
 
             if (lineItems.isEmpty()) {
                 android.widget.Toast.makeText(
-                    activity, "Please add at least one product",
+                    activity,
+                    "Please add at least one product",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
+
                 return@makeActionButton
             }
 
@@ -741,7 +823,8 @@ class PurchaseOrdersPage(private val activity: Activity) {
             val emptyText = TextView(activity)
             emptyText.text = "No items added yet"
             emptyText.textSize = 13f
-            emptyText.setTextColor(Color.GRAY)
+            emptyText.setTextColor(getMutedTextColor())
+
             lineItemsContainer.addView(emptyText)
             return
         }
@@ -754,18 +837,21 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
             val itemText = TextView(activity)
             itemText.text = "$product x$qty @ $${"%.2f".format(cost)}" +
-                " = $${"%.2f".format(qty * cost)}"
+                    " = $${"%.2f".format(qty * cost)}"
             itemText.textSize = 13f
-            itemText.setTextColor(Color.rgb(55, 65, 81))
+            itemText.setTextColor(getSecondaryTextColor())
             itemText.layoutParams = LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
 
-            // Remove button for each line item
             val removeBtn = TextView(activity)
             removeBtn.text = "X"
             removeBtn.textSize = 13f
-            removeBtn.setTextColor(Color.RED)
+            removeBtn.setTextColor(getNegativeColor())
             removeBtn.setPadding(dp(8), dp(4), dp(8), dp(4))
+
             removeBtn.setOnClickListener {
                 lineItems.removeAt(index)
                 updateLineItemsDisplay()
@@ -788,18 +874,14 @@ class PurchaseOrdersPage(private val activity: Activity) {
     private fun createNewPO(vendor: String, notes: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Auto-increment PO number
                 val snapshot = db.collection("purchaseOrders").get().await()
                 val nextNumber = snapshot.size() + 1
                 val poNumber = "PO-" + nextNumber.toString().padStart(4, '0')
 
-                // Store as Firestore Timestamp
                 val timestamp = com.google.firebase.Timestamp.now()
 
-                // Calculate total from line items
                 val total = lineItems.sumOf { (_, qty, cost) -> qty * cost }
 
-                // Convert line items to Firestore format
                 val itemsList = lineItems.map { (product, qty, cost) ->
                     hashMapOf(
                         "productName" to product,
@@ -824,11 +906,13 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     lineItems.clear()
                     loadPurchaseOrders()
                     detailPanel.removeAllViews()
+
                     val successText = TextView(activity)
                     successText.text = "$poNumber created successfully"
                     successText.textSize = 16f
-                    successText.setTextColor(Color.rgb(34, 197, 94))
+                    successText.setTextColor(getPositiveColor())
                     successText.setPadding(0, dp(20), 0, 0)
+
                     detailPanel.addView(successText)
                 }
 
@@ -837,7 +921,8 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error creating PO: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+                    errorText.setTextColor(getNegativeColor())
+
                     detailPanel.addView(errorText)
                 }
             }
@@ -849,7 +934,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val header = LinearLayout(activity)
         header.orientation = LinearLayout.HORIZONTAL
         header.setPadding(dp(16), dp(10), dp(16), dp(10))
-        header.setBackgroundColor(Color.rgb(248, 249, 250))
+        header.setBackgroundColor(getSectionBackgroundColor())
 
         listOf(
             Pair("PO #", 1f),
@@ -861,10 +946,14 @@ class PurchaseOrdersPage(private val activity: Activity) {
             val cell = TextView(activity)
             cell.text = text
             cell.textSize = 13f
-            cell.setTextColor(Color.rgb(107, 114, 128))
+            cell.setTextColor(getMutedTextColor())
             cell.setTypeface(null, Typeface.BOLD)
             cell.layoutParams = LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                weight
+            )
+
             header.addView(cell)
         }
 
@@ -878,15 +967,17 @@ class PurchaseOrdersPage(private val activity: Activity) {
         btn.textSize = 13f
         btn.gravity = Gravity.CENTER
         btn.setPadding(dp(12), dp(6), dp(12), dp(6))
-        btn.setTextColor(Color.rgb(55, 65, 81))
-        btn.setBackgroundColor(Color.rgb(243, 244, 246))
+        btn.setTextColor(getSecondaryTextColor())
+        btn.setBackgroundColor(getInputBackgroundColor())
 
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         params.setMargins(0, 0, dp(8), 0)
         btn.layoutParams = params
+
         return btn
     }
 
@@ -898,18 +989,20 @@ class PurchaseOrdersPage(private val activity: Activity) {
         btn.gravity = Gravity.CENTER
         btn.setPadding(dp(16), dp(8), dp(16), dp(8))
         btn.setTextColor(Color.WHITE)
-        btn.setBackgroundColor(Color.rgb(34, 197, 94))
+        btn.setBackgroundColor(getPositiveColor())
 
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         params.gravity = Gravity.END
         params.weight = 1f
         params.setMargins(dp(8), 0, 0, 0)
         btn.layoutParams = params
 
         btn.setOnClickListener { showNewOrderForm() }
+
         return btn
     }
 
@@ -918,14 +1011,16 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val label = TextView(activity)
         label.text = text
         label.textSize = 14f
-        label.setTextColor(Color.rgb(55, 65, 81))
+        label.setTextColor(getSecondaryTextColor())
 
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         params.setMargins(0, dp(12), 0, dp(4))
         label.layoutParams = params
+
         return label
     }
 
@@ -934,17 +1029,19 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val input = android.widget.EditText(activity)
         input.hint = hint
         input.textSize = 15f
-        input.setTextColor(Color.BLACK)
-        input.setHintTextColor(Color.LTGRAY)
+        input.setTextColor(getPrimaryTextColor())
+        input.setHintTextColor(getMutedTextColor())
         input.setPadding(dp(12), dp(12), dp(12), dp(12))
-        input.setBackgroundColor(Color.rgb(243, 244, 246))
+        input.setBackgroundColor(getInputBackgroundColor())
 
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         params.setMargins(0, 0, 0, dp(8))
         input.layoutParams = params
+
         return input
     }
 
@@ -966,19 +1063,122 @@ class PurchaseOrdersPage(private val activity: Activity) {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+
         params.setMargins(0, dp(8), 0, dp(8))
         btn.layoutParams = params
+
         btn.setOnClickListener { onClick() }
+
         return btn
     }
 
     // Returns color based on PO status
     private fun getStatusColor(status: String): Int {
         return when (status) {
-            "received" -> Color.rgb(34, 197, 94)
-            "submitted" -> Color.rgb(45, 95, 255)
-            "pending review" -> Color.rgb(245, 158, 11)
-            else -> Color.GRAY
+            "received" -> getPositiveColor()
+            "submitted" -> getPrimaryActionColor()
+            "pending review" -> getWarningColor()
+            else -> getMutedTextColor()
+        }
+    }
+
+    private fun isDarkModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_DARK_MODE, false)
+    }
+
+    private fun isColorblindModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_COLORBLIND_MODE, false)
+    }
+
+    private fun getPageBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(38, 38, 38)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    private fun getSectionBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(48, 48, 48)
+        } else {
+            Color.rgb(248, 249, 250)
+        }
+    }
+
+    private fun getInputBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(60, 60, 60)
+        } else {
+            Color.rgb(243, 244, 246)
+        }
+    }
+
+    private fun getPrimaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.WHITE
+        } else {
+            Color.BLACK
+        }
+    }
+
+    private fun getSecondaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.LTGRAY
+        } else {
+            Color.rgb(55, 65, 81)
+        }
+    }
+
+    private fun getMutedTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(180, 180, 180)
+        } else {
+            Color.GRAY
+        }
+    }
+
+    private fun getDividerColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(80, 80, 80)
+        } else {
+            Color.rgb(229, 231, 235)
+        }
+    }
+
+    private fun getPrimaryActionColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(45, 95, 255)
+        }
+    }
+
+    private fun getPositiveColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(34, 197, 94)
+        }
+    }
+
+    private fun getWarningColor(): Int {
+        return Color.rgb(230, 159, 0)
+    }
+
+    private fun getNegativeColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(213, 94, 0)
+        } else {
+            Color.RED
+        }
+    }
+
+    private fun getMutedButtonColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(90, 90, 90)
+        } else {
+            Color.rgb(107, 114, 128)
         }
     }
 
