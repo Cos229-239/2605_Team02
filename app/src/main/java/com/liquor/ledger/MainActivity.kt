@@ -118,6 +118,9 @@ class MainActivity : Activity() {
             sidebar.addView(makeTab("   Inventory Alert"))
         }
 
+        // Timecard tab
+        sidebar.addView(makeTab("Timecard"))
+
         sidebar.addView(makeTab("Settings"))
     }
 
@@ -268,8 +271,20 @@ class MainActivity : Activity() {
                     LinearLayout.LayoutParams.MATCH_PARENT
                 )
             )
+        }
 
-        } else if (pageName == "Settings") {
+            else if (pageName == "Timecard") {
+                val timecardPage = TimecardPage(this)
+                contentBox.addView(
+                    timecardPage.build(),
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT
+                    )
+                )
+            }
+
+            else if (pageName == "Settings") {
 
             /*
              * SettingsPage callback
