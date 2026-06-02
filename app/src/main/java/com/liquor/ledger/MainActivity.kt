@@ -204,7 +204,7 @@ class MainActivity : Activity() {
         )
 
         // CONTENT BOX MARGINS
-        boxParams.setMargins(dp(24), dp(10), dp(24), dp(24))
+        boxParams.setMargins(dp(24), dp(10), dp(24), dp(48))
 
         // ADD HEADER AND CONTENT BOX
         mainContent.addView(header)
