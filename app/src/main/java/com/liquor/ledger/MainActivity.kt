@@ -1,6 +1,5 @@
 package com.liquor.ledger
 
-
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
@@ -8,9 +7,7 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 
-
 class MainActivity : Activity() {
-
 
     private lateinit var root: LinearLayout
     private lateinit var sidebar: LinearLayout
@@ -18,13 +15,10 @@ class MainActivity : Activity() {
     private lateinit var header: TextView
     private lateinit var contentBox: LinearLayout
 
-
     private var reportsExpanded = false
-
 
     private val darkBlue = Color.rgb(16, 30, 55)
     private val lightGray = Color.rgb(245, 245, 245)
-
 
     /*
      * SharedPreferences
@@ -36,26 +30,21 @@ class MainActivity : Activity() {
         getSharedPreferences("settings_prefs", MODE_PRIVATE)
     }
 
-
     private val KEY_COLORBLIND_MODE = "colorblind_mode"
     private val KEY_DARK_MODE = "dark_mode"
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         // ROOT LAYOUT
         root = LinearLayout(this)
         root.orientation = LinearLayout.HORIZONTAL
         root.setBackgroundColor(getRootBackgroundColor())
 
-
         // SIDEBAR
         sidebar = LinearLayout(this)
         sidebar.orientation = LinearLayout.VERTICAL
         sidebar.setBackgroundColor(getSidebarColor())
-
 
         // SIDEBAR SIZE
         val sidebarParams = LinearLayout.LayoutParams(
@@ -63,12 +52,10 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams.MATCH_PARENT
         )
 
-
         // MAIN CONTENT AREA
         mainContent = LinearLayout(this)
         mainContent.orientation = LinearLayout.VERTICAL
         mainContent.setBackgroundColor(getMainBackgroundColor())
-
 
         // MAIN CONTENT SIZE
         val mainParams = LinearLayout.LayoutParams(
@@ -77,24 +64,19 @@ class MainActivity : Activity() {
             1f
         )
 
-
         // ADD SIDEBAR AND CONTENT TO ROOT
         root.addView(sidebar, sidebarParams)
         root.addView(mainContent, mainParams)
 
-
         // SET SCREEN CONTENT
         setContentView(root)
-
 
         // BUILD SIDEBAR
         buildSidebar()
 
-
         // DEFAULT PAGE
         loadPage("POS / Register")
     }
-
 
     /*
      * buildSidebar()
@@ -104,14 +86,11 @@ class MainActivity : Activity() {
      */
     private fun buildSidebar() {
 
-
         // CLEAR OLD SIDEBAR ITEMS
         sidebar.removeAllViews()
 
-
         // APPLY CURRENT SIDEBAR COLOR
         sidebar.setBackgroundColor(getSidebarColor())
-
 
         // APP TITLE
         val title = TextView(this)
@@ -120,22 +99,17 @@ class MainActivity : Activity() {
         title.setTextColor(Color.WHITE)
         title.setPadding(dp(24), dp(48), dp(16), dp(40))
 
-
         sidebar.addView(title)
-
 
         // SIDEBAR TABS
         sidebar.addView(makeTab("POS / Register"))
         sidebar.addView(makeTab("Inventory"))
 
-
         if (SessionManager.currentEmployee?.position == "Manager") {
             sidebar.addView(makeTab("Purchase Orders"))
         }
 
-
         sidebar.addView(makeReportsTab())
-
 
         if (reportsExpanded) {
             sidebar.addView(makeTab("   Sales Analytics"))
@@ -144,10 +118,35 @@ class MainActivity : Activity() {
             sidebar.addView(makeTab("   Inventory Alert"))
         }
 
+        // Timecard tab
+        sidebar.addView(makeTab("Timecard"))
 
         sidebar.addView(makeTab("Settings"))
-    }
 
+        // SPACER — pushes logout button to the bottom
+        val spacer = android.view.View(this)
+        val spacerParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+        sidebar.addView(spacer, spacerParams)
+
+        // LOGOUT BUTTON — always visible at bottom of sidebar
+        val logoutBtn = makeTab("Logout")
+        logoutBtn.setTextColor(Color.rgb(239, 68, 68))
+        logoutBtn.setOnClickListener {
+            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+            SessionManager.clear()
+            val intent = android.content.Intent(this, LoginActivity::class.java)
+            intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
+        sidebar.addView(logoutBtn)
+
+    }
 
     /*
      * makeTab()
@@ -156,9 +155,7 @@ class MainActivity : Activity() {
      */
     private fun makeTab(text: String): TextView {
 
-
         val tab = TextView(this)
-
 
         tab.text = text
         tab.textSize = 16f
@@ -166,15 +163,12 @@ class MainActivity : Activity() {
         tab.setPadding(dp(28), dp(18), dp(16), dp(18))
         tab.setTextColor(Color.WHITE)
 
-
         tab.setOnClickListener {
             loadPage(text)
         }
 
-
         return tab
     }
-
 
     /*
      * makeReportsTab()
@@ -184,9 +178,7 @@ class MainActivity : Activity() {
      */
     private fun makeReportsTab(): TextView {
 
-
         val tab = TextView(this)
-
 
         tab.text = "Reports"
         tab.textSize = 16f
@@ -194,16 +186,13 @@ class MainActivity : Activity() {
         tab.setPadding(dp(28), dp(18), dp(16), dp(18))
         tab.setTextColor(Color.WHITE)
 
-
         tab.setOnClickListener {
             reportsExpanded = !reportsExpanded
             buildSidebar()
         }
 
-
         return tab
     }
-
 
     /*
      * loadPage()
@@ -212,14 +201,11 @@ class MainActivity : Activity() {
      */
     private fun loadPage(pageName: String) {
 
-
         // CLEAR OLD PAGE
         mainContent.removeAllViews()
 
-
         // APPLY CURRENT APP THEME
         applyAppTheme()
-
 
         // PAGE HEADER
         header = TextView(this)
@@ -228,13 +214,11 @@ class MainActivity : Activity() {
         header.setTextColor(getHeaderTextColor())
         header.setPadding(dp(32), dp(32), 0, dp(16))
 
-
         // CONTENT BOX
         contentBox = LinearLayout(this)
         contentBox.orientation = LinearLayout.VERTICAL
         contentBox.setBackgroundColor(getContentBoxColor())
         contentBox.setPadding(dp(20), dp(20), dp(20), dp(20))
-
 
         // CONTENT BOX SIZE
         val boxParams = LinearLayout.LayoutParams(
@@ -243,21 +227,16 @@ class MainActivity : Activity() {
             1f
         )
 
-
         // CONTENT BOX MARGINS
         boxParams.setMargins(dp(24), dp(10), dp(24), dp(48))
-
 
         // ADD HEADER AND CONTENT BOX
         mainContent.addView(header)
         mainContent.addView(contentBox, boxParams)
 
-
         if (pageName == "POS / Register") {
 
-
             val posPage = POSPage(this)
-
 
             contentBox.addView(
                 posPage.build(),
@@ -267,12 +246,9 @@ class MainActivity : Activity() {
                 )
             )
 
-
         } else if (pageName == "Reports" || pageName == "   Sales Analytics") {
 
-
             val reportsPage = ReportsPage(this)
-
 
             contentBox.addView(
                 reportsPage.build(),
@@ -282,49 +258,23 @@ class MainActivity : Activity() {
                 )
             )
 
+        } else if (
+            pageName == "   Sales Report" ||
+            pageName == "   Inventory Report" ||
+            pageName == "   Inventory Alert"
+        ) {
 
-        }
+            val pageText = TextView(this)
+            pageText.text = "$pageName screen will go here"
+            pageText.textSize = 18f
+            pageText.setTextColor(getBodyTextColor())
+            pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
 
+            contentBox.addView(pageText)
 
-        else if (pageName == "   Sales Report") {
-
-
-            val salesReportPage = SalesReportPage(this)
-
-
-            contentBox.addView(
-                salesReportPage.build(),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                )
-            )
-
-
-        }
-        else if (pageName == "   Inventory Alert") {
-
-
-            val inventoryAlertPage = InventoryAlertPage(this)
-
-
-            contentBox.addView(
-                inventoryAlertPage.build(),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                )
-            )
-
-
-        }
-
-
-        else if (pageName == "Inventory") {
-
+        } else if (pageName == "Inventory") {
 
             val inventoryPage = InventoryPage(this)
-
 
             contentBox.addView(
                 inventoryPage.build(),
@@ -334,12 +284,9 @@ class MainActivity : Activity() {
                 )
             )
 
-
         } else if (pageName == "Purchase Orders") {
 
-
             val purchaseOrdersPage = PurchaseOrdersPage(this)
-
 
             contentBox.addView(
                 purchaseOrdersPage.build(),
@@ -349,24 +296,19 @@ class MainActivity : Activity() {
                 )
             )
         }
-        else if (pageName == "   Inventory Report") {
 
-
-            val inventoryReportPage = InventoryReportPage(this)
-
-
-            contentBox.addView(
-                inventoryReportPage.build(),
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
+            else if (pageName == "Timecard") {
+                val timecardPage = TimecardPage(this)
+                contentBox.addView(
+                    timecardPage.build(),
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT
+                    )
                 )
-            )
-        }
+            }
 
-
-        else if (pageName == "Settings") {
-
+            else if (pageName == "Settings") {
 
             /*
              * SettingsPage callback
@@ -380,12 +322,9 @@ class MainActivity : Activity() {
                 loadPage("Settings")
             }
 
-
             contentBox.addView(settingsPage.build())
 
-
         } else {
-
 
             val pageText = TextView(this)
             pageText.text = "$pageName screen will go here"
@@ -393,11 +332,9 @@ class MainActivity : Activity() {
             pageText.setTextColor(getBodyTextColor())
             pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
 
-
             contentBox.addView(pageText)
         }
     }
-
 
     /*
      * Checks if Dark Mode is enabled.
@@ -406,14 +343,12 @@ class MainActivity : Activity() {
         return prefs.getBoolean(KEY_DARK_MODE, false)
     }
 
-
     /*
      * Checks if Colorblind Mode is enabled.
      */
     private fun isColorblindModeEnabled(): Boolean {
         return prefs.getBoolean(KEY_COLORBLIND_MODE, false)
     }
-
 
     /*
      * Root background color.
@@ -426,7 +361,6 @@ class MainActivity : Activity() {
         }
     }
 
-
     /*
      * Main content background color.
      */
@@ -437,7 +371,6 @@ class MainActivity : Activity() {
             Color.WHITE
         }
     }
-
 
     /*
      * Sidebar color.
@@ -452,7 +385,6 @@ class MainActivity : Activity() {
         }
     }
 
-
     /*
      * Content box color.
      */
@@ -463,7 +395,6 @@ class MainActivity : Activity() {
             lightGray
         }
     }
-
 
     /*
      * Header text color.
@@ -476,7 +407,6 @@ class MainActivity : Activity() {
         }
     }
 
-
     /*
      * Body/placeholder text color.
      */
@@ -488,7 +418,6 @@ class MainActivity : Activity() {
         }
     }
 
-
     /*
      * applyAppTheme()
      *
@@ -499,17 +428,14 @@ class MainActivity : Activity() {
         sidebar.setBackgroundColor(getSidebarColor())
         mainContent.setBackgroundColor(getMainBackgroundColor())
 
-
         if (::header.isInitialized) {
             header.setTextColor(getHeaderTextColor())
         }
-
 
         if (::contentBox.isInitialized) {
             contentBox.setBackgroundColor(getContentBoxColor())
         }
     }
-
 
     /*
      * Converts dp to pixels.
