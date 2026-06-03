@@ -9,6 +9,7 @@ package com.liquor.ledger
     import android.widget.LinearLayout
     import android.widget.TextView
     import android.widget.Toast
+    import android.app.AlertDialog
 
     import com.liquor.ledger.firebase.FirebaseManager
 
@@ -23,6 +24,7 @@ package com.liquor.ledger
     import kotlinx.coroutines.withContext
 
 
+
 class POSPage(private val activity: Activity) {
 
     private val db = FirebaseManager.db
@@ -35,6 +37,12 @@ class POSPage(private val activity: Activity) {
     private var cartSubtotal = 0.0
     private var cartTax = 0.0
     private var cartTotal = 0.0
+    private val cartItems = mutableListOf<MutableMap<String, Any>>()
+    private var amountPaid = 0.0
+    private var remainingBalance = 0.0
+    private var changeDue = 0.0
+    private lateinit var remainingBalanceAmount: TextView
+    private lateinit var paymentAmountBox: EditText
 
     fun build(): LinearLayout {
 
@@ -382,10 +390,23 @@ class POSPage(private val activity: Activity) {
             val lineSubtotal = selectedProductPrice * quantity
             val lineTax = lineSubtotal * (selectedProductTax / 100)
             val lineTotal = lineSubtotal + lineTax
+            val cartItem = mutableMapOf<String, Any>(
+                "name" to selectedProductName,
+                "sku" to selectedProductSku,
+                "quantity" to quantity,
+                "price" to selectedProductPrice,
+                "taxPercent" to selectedProductTax,
+                "lineSubtotal" to lineSubtotal,
+                "lineTax" to lineTax,
+                "lineTotal" to lineTotal
+            )
+
+            cartItems.add(cartItem)
 
             cartSubtotal += lineSubtotal
             cartTax += lineTax
             cartTotal += lineTotal
+            remainingBalance = cartTotal - amountPaid
 
             val cartRow = LinearLayout(activity)
             cartRow.orientation = LinearLayout.HORIZONTAL
@@ -441,6 +462,7 @@ class POSPage(private val activity: Activity) {
                 cartSubtotal -= lineSubtotal
                 cartTax -= lineTax
                 cartTotal -= lineTotal
+                remainingBalance = cartTotal - amountPaid
 
                 if (cartSubtotal < 0.0) cartSubtotal = 0.0
                 if (cartTax < 0.0) cartTax = 0.0
@@ -449,8 +471,10 @@ class POSPage(private val activity: Activity) {
                 subtotalText.text = "Subtotal: $${"%.2f".format(cartSubtotal)}"
                 taxText.text = "Tax: $${"%.2f".format(cartTax)}"
                 totalText.text = "Total: $${"%.2f".format(cartTotal)}"
+                remainingBalanceAmount.text = "$${"%.2f".format(remainingBalance)}"
 
                 cartItemsContainer.removeView(cartRow)
+                cartItems.remove(cartItem)
 
                 if (cartItemsContainer.childCount == 0) {
                     emptyCartText.visibility = android.view.View.VISIBLE
@@ -460,6 +484,7 @@ class POSPage(private val activity: Activity) {
             subtotalText.text = "Subtotal: $${"%.2f".format(cartSubtotal)}"
             taxText.text = "Tax: $${"%.2f".format(cartTax)}"
             totalText.text = "Total: $${"%.2f".format(cartTotal)}"
+            remainingBalanceAmount.text = "$${"%.2f".format(remainingBalance)}"
 
             searchBox.setText("")
             qtyBox.setText("")
@@ -660,21 +685,16 @@ class POSPage(private val activity: Activity) {
         rightText.setTextColor(Color.BLACK)
         rightText.setPadding(30, 30, 30, 30)
 
-        rightPanel.setPadding(18, 14, 18, 14)
+        rightPanel.setPadding(18, 8, 18, 8)
 
-        val paymentTitle = TextView(activity)
-        paymentTitle.text = "Payment"
-        paymentTitle.textSize = 24f
-        paymentTitle.setTextColor(Color.BLACK)
-        paymentTitle.setPadding(0, 0, 0, 8)
 
         val remainingBalanceLabel = TextView(activity)
         remainingBalanceLabel.text = "Remaining Balance"
         remainingBalanceLabel.textSize = 14f
         remainingBalanceLabel.setTextColor(Color.GRAY)
 
-        val remainingBalanceAmount = TextView(activity)
-        remainingBalanceAmount.text = "$0.00"
+        remainingBalanceAmount = TextView(activity)
+        remainingBalanceAmount.text = "$${"%.2f".format(remainingBalance)}"
         remainingBalanceAmount.textSize = 34f
         remainingBalanceAmount.setTextColor(Color.BLACK)
         remainingBalanceAmount.setPadding(0, 0, 0, 12)
@@ -684,7 +704,7 @@ class POSPage(private val activity: Activity) {
         paymentAmountLabel.textSize = 14f
         paymentAmountLabel.setTextColor(Color.GRAY)
 
-        val paymentAmountBox = EditText(activity)
+        paymentAmountBox = EditText(activity)
         paymentAmountBox.hint = "Enter amount"
         paymentAmountBox.textSize = 18f
         paymentAmountBox.setSingleLine(true)
@@ -692,7 +712,6 @@ class POSPage(private val activity: Activity) {
         paymentAmountBox.setHintTextColor(Color.DKGRAY)
         paymentAmountBox.setBackgroundColor(Color.WHITE)
 
-        rightPanel.addView(paymentTitle)
         rightPanel.addView(remainingBalanceLabel)
         rightPanel.addView(remainingBalanceAmount)
         rightPanel.addView(paymentAmountLabel)
@@ -876,10 +895,254 @@ class POSPage(private val activity: Activity) {
         rightPanel.addView(completeSaleButton, actionButtonParams)
         rightPanel.addView(cancelTransactionButton, actionButtonParams)
 
+        clearAmountButton.setOnClickListener {
+            paymentAmountBox.setText("")
+        }
+
+        fiveButton.setOnClickListener {
+            paymentAmountBox.setText("5.00")
+        }
+
+        tenButton.setOnClickListener {
+            paymentAmountBox.setText("10.00")
+        }
+
+        twentyButton.setOnClickListener {
+            paymentAmountBox.setText("20.00")
+        }
+
+        fiftyButton.setOnClickListener {
+            paymentAmountBox.setText("50.00")
+        }
+
+        hundredButton.setOnClickListener {
+            paymentAmountBox.setText("100.00")
+        }
+
+        exactButton.setOnClickListener {
+            paymentAmountBox.setText("%.2f".format(remainingBalance))
+        }
+
+        fun appendPaymentText(value: String) {
+            paymentAmountBox.append(value)
+        }
+
+        button1.setOnClickListener { appendPaymentText("1") }
+        button2.setOnClickListener { appendPaymentText("2") }
+        button3.setOnClickListener { appendPaymentText("3") }
+
+        button4.setOnClickListener { appendPaymentText("4") }
+        button5.setOnClickListener { appendPaymentText("5") }
+        button6.setOnClickListener { appendPaymentText("6") }
+
+        button7.setOnClickListener { appendPaymentText("7") }
+        button8.setOnClickListener { appendPaymentText("8") }
+        button9.setOnClickListener { appendPaymentText("9") }
+
+        button0.setOnClickListener { appendPaymentText("0") }
+
+        decimalButton.setOnClickListener {
+
+            val currentText = paymentAmountBox.text.toString()
+
+            if (!currentText.contains(".")) {
+                appendPaymentText(".")
+            }
+        }
+
+        backspaceButton.setOnClickListener {
+
+            val currentText = paymentAmountBox.text.toString()
+
+            if (currentText.isNotEmpty()) {
+                paymentAmountBox.setText(
+                    currentText.substring(0, currentText.length - 1)
+                )
+                paymentAmountBox.setSelection(
+                    paymentAmountBox.text.length
+                )
+            }
+        }
+
+        applyPaymentButton.setOnClickListener {
+
+            val paymentAmount = paymentAmountBox.text.toString().toDoubleOrNull()
+
+            if (paymentAmount == null || paymentAmount <= 0.0) {
+                Toast.makeText(activity, "Enter a valid payment amount", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (cartTotal <= 0.0) {
+                Toast.makeText(activity, "Cart is empty", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            amountPaid += paymentAmount
+            remainingBalance = cartTotal - amountPaid
+
+            if (remainingBalance < 0.0) {
+                changeDue = amountPaid - cartTotal
+                remainingBalance = 0.0
+
+                AlertDialog.Builder(activity)
+                    .setTitle("Change Due")
+                    .setMessage("$${"%.2f".format(changeDue)}")
+                    .setPositiveButton("OK") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+            } else {
+                changeDue = 0.0
+            }
+
+            remainingBalanceAmount.text = "$${"%.2f".format(remainingBalance)}"
+            paymentAmountBox.setText("")
+        }
+
+        completeSaleButton.setOnClickListener {
+
+            if (cartItems.isEmpty()) {
+                Toast.makeText(activity, "Cart is empty", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (amountPaid < cartTotal) {
+                Toast.makeText(activity, "Payment is not complete", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            CoroutineScope(Dispatchers.IO).launch {
+
+                try {
+
+                    val saleData = hashMapOf(
+                        "subtotal" to cartSubtotal,
+                        "tax" to cartTax,
+                        "total" to cartTotal,
+                        "paidAmount" to amountPaid,
+                        "changeDue" to maxOf(0.0, amountPaid - cartTotal),
+                        "timestamp" to Date(),
+                        "items" to cartItems.map { HashMap(it) }
+                    )
+
+                    db.collection("sales").add(saleData).await()
+
+                    cartItems.forEach { item ->
+
+                        val sku = item["sku"].toString()
+                        val quantitySold = item["quantity"].toString().toIntOrNull() ?: 0
+
+                        if (sku.isNotEmpty() && quantitySold > 0) {
+
+                            val productSnapshot = db.collection("products")
+                                .whereEqualTo("sku", sku)
+                                .limit(1)
+                                .get()
+                                .await()
+
+                            if (!productSnapshot.isEmpty) {
+
+                                val productDoc = productSnapshot.documents[0]
+                                val currentStock = productDoc.getLong("stock") ?: 0L
+                                val newStock = maxOf(0L, currentStock - quantitySold)
+
+                                db.collection("products")
+                                    .document(productDoc.id)
+                                    .update("stock", newStock)
+                                    .await()
+                            }
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+
+                        cartItems.clear()
+                        cartItemsContainer.removeAllViews()
+                        emptyCartText.visibility = android.view.View.VISIBLE
+
+                        cartSubtotal = 0.0
+                        cartTax = 0.0
+                        cartTotal = 0.0
+                        amountPaid = 0.0
+                        remainingBalance = 0.0
+
+                        subtotalText.text = "Subtotal: $0.00"
+                        taxText.text = "Tax: $0.00"
+                        totalText.text = "Total: $0.00"
+                        remainingBalanceAmount.text = "$0.00"
+                        paymentAmountBox.setText("")
+
+                        searchBox.setText("")
+                        qtyBox.setText("")
+                        priceBox.setText("")
+                        discountBox.setText("")
+                        taxBox.setText("")
+
+                        Toast.makeText(activity, "Sale completed", Toast.LENGTH_SHORT).show()
+                    }
+
+                } catch (e: Exception) {
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            activity,
+                            "Sale error: ${e.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
+
         addButton.setOnClickListener {
             addSelectedProductToCart()
         }
-        
+
+        newTransactionButton.setOnClickListener {
+
+            AlertDialog.Builder(activity)
+                .setTitle("Cancel Current Transaction?")
+                .setMessage("This will clear the current cart and payment information.")
+                .setPositiveButton("Yes") { dialog, _ ->
+
+                    cartItems.clear()
+                    cartItemsContainer.removeAllViews()
+                    emptyCartText.visibility = android.view.View.VISIBLE
+
+                    cartSubtotal = 0.0
+                    cartTax = 0.0
+                    cartTotal = 0.0
+                    amountPaid = 0.0
+                    remainingBalance = 0.0
+                    changeDue = 0.0
+
+                    subtotalText.text = "Subtotal: $0.00"
+                    taxText.text = "Tax: $0.00"
+                    totalText.text = "Total: $0.00"
+                    remainingBalanceAmount.text = "$0.00"
+
+                    searchBox.setText("")
+                    qtyBox.setText("")
+                    priceBox.setText("")
+                    discountBox.setText("")
+                    taxBox.setText("")
+                    paymentAmountBox.setText("")
+
+                    selectedProductName = ""
+                    selectedProductSku = ""
+                    selectedProductPrice = 0.0
+                    selectedProductTax = 0.0
+                    selectedProductStock = 0
+
+                    dialog.dismiss()
+                }
+                .setNegativeButton("No") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
         page.addView(leftSide, leftParams)
         page.addView(rightPanel, rightParams)
 

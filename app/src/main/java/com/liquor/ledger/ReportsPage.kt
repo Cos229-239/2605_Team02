@@ -7,9 +7,23 @@ import android.graphics.Paint
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 
+import java.util.Calendar
+
+import com.liquor.ledger.firebase.FirebaseManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+
 class ReportsPage(private val activity: Activity) {
+
+
+
+    private val db = FirebaseManager.db
 
     /*
      * SharedPreferences
@@ -27,8 +41,15 @@ class ReportsPage(private val activity: Activity) {
      */
     private val KEY_COLORBLIND_MODE = "colorblind_mode"
     private val KEY_DARK_MODE = "dark_mode"
+    private lateinit var totalRevenueCard: TextView
+    private lateinit var transactionCountCard: TextView
+    private lateinit var taxCollectedCard: TextView
+    private var selectedDateFilter = "Today"
 
     fun build(): LinearLayout {
+
+        val scrollView = ScrollView(activity)
+        scrollView.setBackgroundColor(getPageBackgroundColor())
 
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
@@ -48,33 +69,102 @@ class ReportsPage(private val activity: Activity) {
         description.setTextColor(getSecondaryTextColor())
         description.setPadding(0, dp(8), 0, dp(20))
 
+        val filterRow = LinearLayout(activity)
+        filterRow.orientation = LinearLayout.HORIZONTAL
+
+        val filterParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        filterParams.setMargins(0, 0, 0, dp(20))
+
+        val todayButton = TextView(activity)
+        todayButton.text = "Today"
+
+        val thirtyDayButton = TextView(activity)
+        thirtyDayButton.text = "30 Days"
+
+        val ninetyDayButton = TextView(activity)
+        ninetyDayButton.text = "90 Days"
+
+        val ytdButton = TextView(activity)
+        ytdButton.text = "YTD"
+
+        val customButton = TextView(activity)
+        customButton.text = "Custom"
+
+        val filterButtonParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        listOf(
+            todayButton,
+            thirtyDayButton,
+            ninetyDayButton,
+            ytdButton,
+            customButton
+        ).forEach {
+
+            it.gravity = Gravity.CENTER
+            it.textSize = 14f
+            it.setTextColor(Color.WHITE)
+            it.setBackgroundColor(getPrimaryActionColor())
+            it.setPadding(0, dp(10), 0, dp(10))
+
+            val buttonParams = LinearLayout.LayoutParams(filterButtonParams)
+            buttonParams.setMargins(dp(4), 0, dp(4), 0)
+
+            filterRow.addView(it, buttonParams)
+        }
+
+        todayButton.setOnClickListener {
+            selectedDateFilter = "Today"
+            loadSalesData(selectedDateFilter)
+        }
+
+        thirtyDayButton.setOnClickListener {
+            selectedDateFilter = "30 Days"
+            loadSalesData(selectedDateFilter)
+        }
+
+        ninetyDayButton.setOnClickListener {
+            selectedDateFilter = "90 Days"
+            loadSalesData(selectedDateFilter)
+        }
+
+        ytdButton.setOnClickListener {
+            selectedDateFilter = "YTD"
+            loadSalesData(selectedDateFilter)
+        }
+
         // SUMMARY ROW
         val summaryRow = LinearLayout(activity)
         summaryRow.orientation = LinearLayout.HORIZONTAL
 
-        summaryRow.addView(
-            makeSummaryCard(
-                "Total Income",
-                "$0.00",
-                getPositiveColor()
-            )
+        totalRevenueCard = makeSummaryCard(
+            "Total Revenue",
+            "$0.00",
+            getPositiveColor()
         )
 
-        summaryRow.addView(
-            makeSummaryCard(
-                "Total Expenses",
-                "$0.00",
-                getNegativeColor()
-            )
+        transactionCountCard = makeSummaryCard(
+            "Transactions",
+            "0",
+            getPrimaryActionColor()
         )
 
-        summaryRow.addView(
-            makeSummaryCard(
-                "Net",
-                "$0.00",
-                getPrimaryActionColor()
-            )
+        taxCollectedCard = makeSummaryCard(
+            "Tax Collected",
+            "$0.00",
+            getNegativeColor()
         )
+
+        summaryRow.addView(totalRevenueCard)
+        summaryRow.addView(transactionCountCard)
+        summaryRow.addView(taxCollectedCard)
 
         // GRAPH DATA
         val graphData = listOf(
@@ -108,11 +198,27 @@ class ReportsPage(private val activity: Activity) {
 
         page.addView(title)
         page.addView(description)
+        page.addView(filterRow, filterParams)
         page.addView(summaryRow)
         page.addView(graph, graphParams)
         page.addView(exportButton)
 
-        return page
+        loadSalesData(selectedDateFilter)
+
+        scrollView.addView(page)
+
+        val root = LinearLayout(activity)
+        root.orientation = LinearLayout.VERTICAL
+        root.setBackgroundColor(getPageBackgroundColor())
+        root.addView(
+            scrollView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        return root
     }
 
     private fun makeSummaryCard(label: String, amount: String, color: Int): TextView {
@@ -234,7 +340,84 @@ class ReportsPage(private val activity: Activity) {
             Color.RED
         }
     }
+    private fun loadSalesData(filter: String) {
 
+        CoroutineScope(Dispatchers.IO).launch {
+
+            try {
+
+                val calendar = Calendar.getInstance()
+
+                when (filter) {
+                    "Today" -> {
+                        calendar.set(Calendar.HOUR_OF_DAY, 0)
+                        calendar.set(Calendar.MINUTE, 0)
+                        calendar.set(Calendar.SECOND, 0)
+                        calendar.set(Calendar.MILLISECOND, 0)
+                    }
+
+                    "30 Days" -> {
+                        calendar.add(Calendar.DAY_OF_YEAR, -30)
+                    }
+
+                    "90 Days" -> {
+                        calendar.add(Calendar.DAY_OF_YEAR, -90)
+                    }
+
+                    "YTD" -> {
+                        calendar.set(Calendar.MONTH, Calendar.JANUARY)
+                        calendar.set(Calendar.DAY_OF_MONTH, 1)
+                        calendar.set(Calendar.HOUR_OF_DAY, 0)
+                        calendar.set(Calendar.MINUTE, 0)
+                        calendar.set(Calendar.SECOND, 0)
+                        calendar.set(Calendar.MILLISECOND, 0)
+                    }
+                }
+
+                val startDate = calendar.time
+
+                val snapshot = db.collection("sales")
+                    .whereGreaterThanOrEqualTo("timestamp", startDate)
+                    .get()
+                    .await()
+
+                var totalRevenue = 0.0
+                var totalTax = 0.0
+                var transactionCount = 0
+
+                snapshot.documents.forEach { document ->
+                    totalRevenue += document.getDouble("total") ?: 0.0
+                    totalTax += document.getDouble("tax") ?: 0.0
+                    transactionCount++
+                }
+
+                withContext(Dispatchers.Main) {
+                    totalRevenueCard.text =
+                        "Total Revenue\n$${"%.2f".format(totalRevenue)}"
+
+                    transactionCountCard.text =
+                        "Transactions\n$transactionCount"
+
+                    taxCollectedCard.text =
+                        "Tax Collected\n$${"%.2f".format(totalTax)}"
+                }
+
+            } catch (e: Exception) {
+
+                withContext(Dispatchers.Main) {
+
+                    totalRevenueCard.text =
+                        "Total Revenue\nError"
+
+                    transactionCountCard.text =
+                        "Transactions\nError"
+
+                    taxCollectedCard.text =
+                        "Tax Collected\nError"
+                }
+            }
+        }
+    }
     private fun dp(value: Int): Int {
         return (value * activity.resources.displayMetrics.density).toInt()
     }
