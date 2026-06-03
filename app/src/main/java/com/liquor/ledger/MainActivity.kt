@@ -122,6 +122,30 @@ class MainActivity : Activity() {
         sidebar.addView(makeTab("Timecard"))
 
         sidebar.addView(makeTab("Settings"))
+
+        // SPACER — pushes logout button to the bottom
+        val spacer = android.view.View(this)
+        val spacerParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+        sidebar.addView(spacer, spacerParams)
+
+        // LOGOUT BUTTON — always visible at bottom of sidebar
+        val logoutBtn = makeTab("Logout")
+        logoutBtn.setTextColor(Color.rgb(239, 68, 68))
+        logoutBtn.setOnClickListener {
+            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+            SessionManager.clear()
+            val intent = android.content.Intent(this, LoginActivity::class.java)
+            intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
+        sidebar.addView(logoutBtn)
+
     }
 
     /*
