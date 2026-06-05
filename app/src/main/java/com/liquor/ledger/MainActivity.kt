@@ -118,9 +118,9 @@ class MainActivity : Activity() {
             sidebar.addView(makeTab("   Inventory Alert"))
         }
 
-        // Timecard tab
-        sidebar.addView(makeTab("Timecard"))
 
+        sidebar.addView(makeTab("Timecard"))
+        sidebar.addView(makeTab("User Info"))
         sidebar.addView(makeTab("Settings"))
 
         // SPACER — pushes logout button to the bottom
@@ -307,6 +307,17 @@ class MainActivity : Activity() {
                     )
                 )
             }
+
+            else if (pageName == "User Info") {
+                val userInfoPage = UserInfoPage(this)
+                contentBox.addView(
+                    userInfoPage.build(),
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
 
             else if (pageName == "Settings") {
 

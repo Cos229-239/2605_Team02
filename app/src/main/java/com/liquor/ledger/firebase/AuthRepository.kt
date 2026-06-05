@@ -6,27 +6,27 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.liquor.ledger.Employee
 import kotlinx.coroutines.tasks.await
 
+// AuthRepository handles all authentication operations
+// Supports Employee ID login with account lockout after 5 failed attempts
+
 class AuthRepository {
 
-    // Get auth and db instances from FirebaseManager
     private val auth: FirebaseAuth = FirebaseManager.auth
     private val db: FirebaseFirestore = FirebaseManager.db
 
-    // Returns the currently logged-in user or null
+    // Returns the currently logged in user or null
     val currentUser: FirebaseUser?
         get() = auth.currentUser
 
-    // Login using Employee ID and password
+    // Login using last 4 digits of Employee ID and password
+    // Checks for account lockout before attempting Firebase Auth
     suspend fun loginWithEmployeeId(
         employeeId: String,
         password: String
     ): Result<Employee> {
         return try {
-            // Look up employee by ID in Firestore
-            val snapshot = db
-                .collection("employees")
-                .get()
-                .await()
+            // Get all employees and find matching last 4 digits
+            val snapshot = db.collection("employees").get().await()
 
             val matchingDoc = snapshot.documents.firstOrNull { doc ->
                 val fullId = doc.getString("employeeId") ?: ""
@@ -37,20 +37,68 @@ class AuthRepository {
                 return Result.failure(Exception("Employee ID not found"))
             }
 
-            val doc = matchingDoc
-            val email = doc.getString("email")
+            // Check if account is locked
+            val isLocked = matchingDoc.getBoolean("isLocked") ?: false
+            if (isLocked) {
+                return Result.failure(
+                    Exception("Account locked. Contact your manager to unlock."))
+            }
+
+            val email = matchingDoc.getString("email")
                 ?: return Result.failure(Exception("No email on file"))
 
             val employee = Employee(
-                employeeId = doc.getString("employeeId") ?: "",
-                name = doc.getString("name") ?: "",
-                position = doc.getString("position") ?: "Cashier",
+                employeeId = matchingDoc.getString("employeeId") ?: "",
+                name = matchingDoc.getString("name") ?: "",
+                position = matchingDoc.getString("position") ?: "Cashier",
                 email = email,
-                uid = doc.getString("uid") ?: ""
+                uid = matchingDoc.getString("uid") ?: "",
+                docId = matchingDoc.id
             )
 
-            // Sign in with Firebase Auth
-            auth.signInWithEmailAndPassword(email, password).await()
+            // Attempt Firebase Auth login
+            try {
+                auth.signInWithEmailAndPassword(email, password).await()
+            } catch (e: Exception) {
+                // Login failed — increment failed attempts
+                val currentAttempts = matchingDoc.getLong("failedAttempts") ?: 0L
+                val newAttempts = currentAttempts + 1
+
+                if (newAttempts >= 5) {
+                    // Lock the account
+                    db.collection("employees")
+                        .document(matchingDoc.id)
+                        .update(
+                            mapOf(
+                                "failedAttempts" to newAttempts,
+                                "isLocked" to true
+                            )
+                        )
+                        .await()
+                    return Result.failure(
+                        Exception("Too many failed attempts. Account locked. Contact your manager."))
+                } else {
+                    // Increment failed attempts
+                    db.collection("employees")
+                        .document(matchingDoc.id)
+                        .update("failedAttempts", newAttempts)
+                        .await()
+                    val remaining = 5 - newAttempts
+                    return Result.failure(
+                        Exception("Incorrect password. $remaining attempt(s) remaining."))
+                }
+            }
+
+            // Login successful — reset failed attempts
+            db.collection("employees")
+                .document(matchingDoc.id)
+                .update(
+                    mapOf(
+                        "failedAttempts" to 0L,
+                        "isLocked" to false
+                    )
+                )
+                .await()
 
             Result.success(employee)
 
@@ -59,5 +107,6 @@ class AuthRepository {
         }
     }
 
+    // Logs out the current user
     fun logout() = auth.signOut()
 }
