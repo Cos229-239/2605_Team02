@@ -258,21 +258,47 @@ class MainActivity : Activity() {
                 )
             )
 
-        } else if (
-            pageName == "   Sales Report" ||
-            pageName == "   Inventory Report" ||
-            pageName == "   Inventory Alert"
-        ) {
+        }
+        else if (pageName == "   Sales Report") {
 
-            val pageText = TextView(this)
-            pageText.text = "$pageName screen will go here"
-            pageText.textSize = 18f
-            pageText.setTextColor(getBodyTextColor())
-            pageText.setPadding(dp(20), dp(20), dp(20), dp(20))
+            val salesReportPage = SalesReportPage(this)
 
-            contentBox.addView(pageText)
+            contentBox.addView(
+                salesReportPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
 
-        } else if (pageName == "Inventory") {
+        }
+        else if (pageName == "   Inventory Report") {
+
+            val inventoryReportPage = InventoryReportPage(this)
+
+            contentBox.addView(
+                inventoryReportPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+
+        }
+        else if (pageName == "   Inventory Alert") {
+
+            val inventoryAlertPage = InventoryAlertPage(this)
+
+            contentBox.addView(
+                inventoryAlertPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+
+        }
+        else if (pageName == "Inventory") {
 
             val inventoryPage = InventoryPage(this)
 
