@@ -103,8 +103,8 @@ class AuthRepository {
             Result.success(employee)
 
         } catch (e: Exception) {
-            Result.failure(e)
-        }
+        Result.failure(e)
+    }
     }
 
     // Logs out the current user

@@ -252,7 +252,8 @@ class LoginActivity : Activity() {
                             "Employee ID not found"
                         error.message?.contains("password") == true ->
                             "Incorrect password"
-                        else -> "Login failed. Please try again."
+                        else ->
+                            "Login failed. Please try again."
                     }
                     showError(message)
                 }
