@@ -6,16 +6,19 @@ import android.os.Bundle
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.ScrollView
 
 class MainActivity : Activity() {
 
     private lateinit var root: LinearLayout
     private lateinit var sidebar: LinearLayout
+    private lateinit var sidebarScrollView: ScrollView
     private lateinit var mainContent: LinearLayout
     private lateinit var header: TextView
     private lateinit var contentBox: LinearLayout
 
     private var reportsExpanded = false
+    private var selectedPage = "POS / Register"
 
     private val darkBlue = Color.rgb(16, 30, 55)
     private val lightGray = Color.rgb(245, 245, 245)
@@ -42,9 +45,16 @@ class MainActivity : Activity() {
         root.setBackgroundColor(getRootBackgroundColor())
 
         // SIDEBAR
+        sidebarScrollView = ScrollView(this)
+        sidebarScrollView.setBackgroundColor(getSidebarColor())
+        sidebarScrollView.isVerticalScrollBarEnabled = true
+        sidebarScrollView.isScrollbarFadingEnabled = false
+
         sidebar = LinearLayout(this)
         sidebar.orientation = LinearLayout.VERTICAL
         sidebar.setBackgroundColor(getSidebarColor())
+
+        sidebarScrollView.addView(sidebar)
 
         // SIDEBAR SIZE
         val sidebarParams = LinearLayout.LayoutParams(
@@ -65,7 +75,8 @@ class MainActivity : Activity() {
         )
 
         // ADD SIDEBAR AND CONTENT TO ROOT
-        root.addView(sidebar, sidebarParams)
+        root.addView(sidebarScrollView, sidebarParams)
+
         root.addView(mainContent, mainParams)
 
         // SET SCREEN CONTENT
@@ -165,6 +176,14 @@ class MainActivity : Activity() {
         tab.setPadding(dp(28), dp(18), dp(16), dp(18))
         tab.setTextColor(Color.WHITE)
 
+        if (text == selectedPage) {
+            tab.setBackgroundColor(Color.rgb(45, 95, 255))
+            tab.setTextColor(Color.WHITE)
+        } else {
+            tab.setBackgroundColor(Color.TRANSPARENT)
+            tab.setTextColor(Color.WHITE)
+        }
+
         tab.setOnClickListener {
             loadPage(text)
         }
@@ -202,6 +221,8 @@ class MainActivity : Activity() {
      * Clears the old content and loads the selected page.
      */
     private fun loadPage(pageName: String) {
+        selectedPage = pageName
+        buildSidebar()
 
         // CLEAR OLD PAGE
         mainContent.removeAllViews()
@@ -466,7 +487,7 @@ class MainActivity : Activity() {
      */
     private fun applyAppTheme() {
         root.setBackgroundColor(getRootBackgroundColor())
-        sidebar.setBackgroundColor(getSidebarColor())
+        sidebarScrollView.setBackgroundColor(getSidebarColor())
         mainContent.setBackgroundColor(getMainBackgroundColor())
 
         if (::header.isInitialized) {

@@ -10,6 +10,7 @@ package com.liquor.ledger
     import android.widget.TextView
     import android.widget.Toast
     import android.app.AlertDialog
+    import android.widget.ScrollView
 
     import com.liquor.ledger.firebase.FirebaseManager
 
@@ -313,10 +314,23 @@ class POSPage(private val activity: Activity) {
         cartBox.addView(cartHeader)
         cartBox.addView(emptyCartText)
 
+        val cartScrollView = ScrollView(activity)
+        cartScrollView.isVerticalScrollBarEnabled = true
+        cartScrollView.isScrollbarFadingEnabled = false
+
         val cartItemsContainer = LinearLayout(activity)
         cartItemsContainer.orientation = LinearLayout.VERTICAL
 
-        cartBox.addView(cartItemsContainer)
+        cartScrollView.addView(cartItemsContainer)
+
+        val cartScrollParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        )
+
+        cartBox.addView(cartScrollView, cartScrollParams)
+
 
         val totalsRow = LinearLayout(activity)
         totalsRow.orientation = LinearLayout.HORIZONTAL
