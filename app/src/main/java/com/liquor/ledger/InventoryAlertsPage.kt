@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import com.liquor.ledger.firebase.FirebaseManager
 
 
@@ -34,6 +35,51 @@ class InventoryAlertPage(private val activity: Activity) {
         subtitle.setTextColor(Color.DKGRAY)
         subtitle.setPadding(0, 15, 0, 30)
 
+        val summaryRow = LinearLayout(activity)
+        summaryRow.orientation = LinearLayout.HORIZONTAL
+
+        val lowStockCard = makeSummaryCard("Low Stock", "0")
+        val outOfStockCard = makeSummaryCard("Out of Stock", "0")
+        val totalCheckedCard = makeSummaryCard("Products Checked", "0")
+
+        summaryRow.addView(lowStockCard)
+        summaryRow.addView(outOfStockCard)
+        summaryRow.addView(totalCheckedCard)
+
+        val actionRow = LinearLayout(activity)
+        actionRow.orientation = LinearLayout.HORIZONTAL
+        actionRow.setPadding(0, 0, 0, 24)
+
+        val exportAlertsButton = TextView(activity)
+        exportAlertsButton.text = "Export Alerts"
+        exportAlertsButton.textSize = 16f
+        exportAlertsButton.gravity = Gravity.CENTER
+        exportAlertsButton.setTextColor(Color.WHITE)
+        exportAlertsButton.setBackgroundColor(Color.rgb(20, 180, 120))
+        exportAlertsButton.setPadding(0, 16, 0, 16)
+
+        val createPoButton = TextView(activity)
+        createPoButton.text = "Create Purchase Order"
+        createPoButton.textSize = 16f
+        createPoButton.gravity = Gravity.CENTER
+        createPoButton.setTextColor(Color.WHITE)
+        createPoButton.setBackgroundColor(Color.rgb(45, 95, 255))
+        createPoButton.setPadding(0, 16, 0, 16)
+
+        val actionButtonParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        actionButtonParams.setMargins(6, 0, 6, 0)
+
+        actionRow.addView(exportAlertsButton, actionButtonParams)
+        actionRow.addView(createPoButton, actionButtonParams)
+
+        createPoButton.setOnClickListener {
+            createPurchaseOrderFromAlerts()
+        }
 
         val scrollView = ScrollView(activity)
 
@@ -47,7 +93,9 @@ class InventoryAlertPage(private val activity: Activity) {
 
         root.addView(title)
         root.addView(subtitle)
+        root.addView(summaryRow)
         root.addView(scrollView)
+        root.addView(actionRow)
 
 
         FirebaseManager.db.collection("products")
@@ -86,12 +134,15 @@ class InventoryAlertPage(private val activity: Activity) {
 
 
                 var alertCount = 0
+                var outOfStockCount = 0
+                var totalChecked = 0
 
 
                 for (doc in snapshot.documents) {
 
 
                     val name = doc.getString("name") ?: "Unknown Product"
+                    totalChecked++
                     val sku = doc.getString("sku") ?: "—"
                     val category = doc.getString("category") ?: "—"
                     val vendor = doc.getString("vendor") ?: "—"
@@ -105,42 +156,75 @@ class InventoryAlertPage(private val activity: Activity) {
                         else -> 0
                     }
 
+                    if (stock <= 0) {
+                        outOfStockCount++
+                    }
 
                     if (stock <= 10) {
 
 
                         alertCount++
 
+                        val stockStatusText = when {
+                            stock <= 0 -> "OUT OF STOCK"
+                            stock <= 5 -> "CRITICAL STOCK"
+                            else -> "LOW STOCK"
+                        }
 
-                        val item = TextView(activity)
+                        val stockStatusColor = when {
+                            stock <= 0 -> Color.rgb(211, 47, 47)
+                            stock <= 5 -> Color.rgb(230, 149, 62)
+                            else -> Color.rgb(245, 190, 65)
+                        }
 
+                        val alertCard = LinearLayout(activity)
+                        alertCard.orientation = LinearLayout.VERTICAL
+                        alertCard.setBackgroundColor(Color.rgb(245, 247, 250))
+                        alertCard.setPadding(24, 24, 24, 24)
 
-                        item.text = """
-Product: $name
-SKU: $sku
-Category: $category
-Vendor: $vendor
-Current Stock: $stock
-                       """.trimIndent()
+                        val cardParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
 
+                        cardParams.setMargins(0, 0, 0, 20)
 
-                        item.textSize = 18f
-                        item.setTextColor(Color.BLACK)
-                        item.gravity = Gravity.START
-                        item.setPadding(20, 20, 20, 30)
+                        val nameText = TextView(activity)
+                        nameText.text = name
+                        nameText.textSize = 20f
+                        nameText.setTextColor(Color.BLACK)
 
+                        val statusText = TextView(activity)
+                        statusText.text = stockStatusText
+                        statusText.textSize = 14f
+                        statusText.setTextColor(Color.WHITE)
+                        statusText.setBackgroundColor(stockStatusColor)
+                        statusText.gravity = Gravity.CENTER
+                        statusText.setPadding(12, 8, 12, 8)
 
-                        content.addView(item)
+                        val detailsText = TextView(activity)
+                        detailsText.text = """
+                            SKU: $sku
+                            Category: $category
+                            Vendor: $vendor
+                            Current Stock: $stock
+                            """.trimIndent()
 
+                        detailsText.textSize = 16f
+                        detailsText.setTextColor(Color.DKGRAY)
 
-                        val divider = TextView(activity)
-                        divider.text = "────────────────────────"
+                        alertCard.addView(statusText)
+                        alertCard.addView(nameText)
+                        alertCard.addView(detailsText)
 
+                        content.addView(alertCard, cardParams)
 
-                        content.addView(divider)
                     }
                 }
 
+                lowStockCard.text = "Low Stock\n$alertCount"
+                outOfStockCard.text = "Out of Stock\n$outOfStockCount"
+                totalCheckedCard.text = "Products Checked\n$totalChecked"
 
                 if (alertCount == 0) {
 
@@ -162,5 +246,138 @@ Current Stock: $stock
 
 
         return root
+    }
+    private fun makeSummaryCard(label: String, value: String): TextView {
+
+        val card = TextView(activity)
+        card.text = "$label\n$value"
+        card.textSize = 18f
+        card.setTextColor(Color.BLACK)
+        card.gravity = Gravity.CENTER
+        card.setBackgroundColor(Color.rgb(245, 247, 250))
+        card.setPadding(20, 20, 20, 20)
+
+        val params = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        params.setMargins(6, 0, 6, 24)
+        card.layoutParams = params
+
+        return card
+    }
+
+    private fun createPurchaseOrderFromAlerts() {
+
+        FirebaseManager.db.collection("products")
+            .get()
+            .addOnSuccessListener { snapshot ->
+
+                val itemsByVendor = mutableMapOf<String, MutableList<HashMap<String, Any>>>()
+
+                for (doc in snapshot.documents) {
+
+                    val name = doc.getString("name") ?: "Unknown Product"
+                    val vendor = doc.getString("vendor") ?: "Unknown Vendor"
+
+                    val stock = when (val stockField = doc.get("stock")) {
+                        is Long -> stockField.toInt()
+                        is Double -> stockField.toInt()
+                        is Int -> stockField
+                        is String -> stockField.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+
+                    val reorderPoint = when (val reorderField = doc.get("reorderPoint")) {
+                        is Long -> reorderField.toInt()
+                        is Double -> reorderField.toInt()
+                        is Int -> reorderField
+                        is String -> reorderField.toIntOrNull() ?: 10
+                        else -> 10
+                    }
+
+                    val cost = doc.getDouble("cost") ?: 0.0
+
+                    if (stock <= reorderPoint) {
+
+                        val neededQuantity = reorderPoint - stock
+
+                        if (neededQuantity > 0) {
+
+                            val item = hashMapOf<String, Any>(
+                                "productName" to name,
+                                "quantity" to neededQuantity.toLong(),
+                                "costPerUnit" to cost
+                            )
+
+                            if (!itemsByVendor.containsKey(vendor)) {
+                                itemsByVendor[vendor] = mutableListOf()
+                            }
+
+                            itemsByVendor[vendor]?.add(item)
+                        }
+                    }
+                }
+
+                if (itemsByVendor.isEmpty()) {
+                    Toast.makeText(
+                        activity,
+                        "No low stock items need ordering",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    return@addOnSuccessListener
+                }
+
+                FirebaseManager.db.collection("purchaseOrders")
+                    .get()
+                    .addOnSuccessListener { poSnapshot ->
+
+                        var nextNumber = poSnapshot.size() + 1
+
+                        itemsByVendor.forEach { vendorEntry ->
+
+                            val vendor = vendorEntry.key
+                            val items = vendorEntry.value
+
+                            val total = items.sumOf { item ->
+                                val quantity = item["quantity"] as Long
+                                val costPerUnit = item["costPerUnit"] as Double
+                                quantity * costPerUnit
+                            }
+
+                            val poNumber = "PO-" + nextNumber.toString().padStart(4, '0')
+                            nextNumber++
+
+                            val newPO = hashMapOf(
+                                "poNumber" to poNumber,
+                                "vendor" to vendor,
+                                "date" to com.google.firebase.Timestamp.now(),
+                                "total" to total,
+                                "status" to "pending review",
+                                "notes" to "Auto-created from Inventory Alerts",
+                                "items" to items
+                            )
+
+                            FirebaseManager.db.collection("purchaseOrders")
+                                .add(newPO)
+                        }
+
+                        Toast.makeText(
+                            activity,
+                            "Purchase order draft created",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+            }
+            .addOnFailureListener { error ->
+                Toast.makeText(
+                    activity,
+                    "Error creating purchase order: ${error.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
     }
 }
