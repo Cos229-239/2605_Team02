@@ -132,6 +132,8 @@ class MainActivity : Activity() {
         // Timecard tab
         sidebar.addView(makeTab("Timecard"))
 
+        sidebar.addView(makeTab("User Info"))
+
         sidebar.addView(makeTab("Emergency Contacts"))
 
         sidebar.addView(makeTab("Settings"))
