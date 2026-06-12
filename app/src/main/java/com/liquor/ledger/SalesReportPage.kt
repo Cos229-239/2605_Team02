@@ -90,7 +90,7 @@ class SalesReportPage(private val activity: Activity) {
                 allSales.clear()
 
                 for (doc in result) {
-                    val dateValue = doc.get("date")
+                    val dateValue = doc.get("timestamp") ?: doc.get("date")
                     val date = when (dateValue) {
                         is Timestamp -> dateValue.toDate()
                         is Date -> dateValue

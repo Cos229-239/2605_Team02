@@ -478,6 +478,10 @@ class POSPage(private val activity: Activity) {
                 cartTotal -= lineTotal
                 remainingBalance = cartTotal - amountPaid
 
+                if (remainingBalance < 0.0) {
+                    remainingBalance = 0.0
+                }
+
                 if (cartSubtotal < 0.0) cartSubtotal = 0.0
                 if (cartTax < 0.0) cartTax = 0.0
                 if (cartTotal < 0.0) cartTotal = 0.0
@@ -493,6 +497,14 @@ class POSPage(private val activity: Activity) {
                 if (cartItemsContainer.childCount == 0) {
                     emptyCartText.visibility = android.view.View.VISIBLE
                 }
+
+                if (cartItems.isEmpty()) {
+                    amountPaid = 0.0
+                    remainingBalance = 0.0
+                    changeDue = 0.0
+                    paymentAmountBox.setText("")
+                }
+
             }
 
             subtotalText.text = "Subtotal: $${"%.2f".format(cartSubtotal)}"
@@ -978,6 +990,109 @@ class POSPage(private val activity: Activity) {
             }
         }
 
+        fun completePaidTransaction() {
+
+            Toast.makeText(activity, "Completing sale...", Toast.LENGTH_SHORT).show()
+
+            if (cartItems.isEmpty()) {
+                Toast.makeText(activity, "Cart is empty", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            if (amountPaid < cartTotal) {
+                Toast.makeText(activity, "Payment is not complete", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            CoroutineScope(Dispatchers.IO).launch {
+
+                try {
+
+                    val saleData = hashMapOf(
+                        "subtotal" to cartSubtotal,
+                        "tax" to cartTax,
+                        "total" to cartTotal,
+                        "paidAmount" to amountPaid,
+                        "changeDue" to maxOf(0.0, amountPaid - cartTotal),
+                        "timestamp" to Date(),
+                        "items" to cartItems.map { HashMap(it) }
+                    )
+
+                    db.collection("sales").add(saleData).await()
+
+                    cartItems.forEach { item ->
+
+                        try {
+
+                            val sku = item["sku"].toString()
+                            val quantitySold = item["quantity"].toString().toIntOrNull() ?: 0
+
+                            if (sku.isNotEmpty() && quantitySold > 0) {
+
+                                val productSnapshot = db.collection("products")
+                                    .whereEqualTo("sku", sku)
+                                    .limit(1)
+                                    .get()
+                                    .await()
+
+                                if (!productSnapshot.isEmpty) {
+
+                                    val productDoc = productSnapshot.documents[0]
+                                    val currentStock = productDoc.getLong("stock") ?: 0L
+                                    val newStock = maxOf(0L, currentStock - quantitySold)
+
+                                    db.collection("products")
+                                        .document(productDoc.id)
+                                        .update("stock", newStock)
+                                        .await()
+                                }
+                            }
+
+                        } catch (stockError: Exception) {
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+
+                        cartItems.clear()
+                        cartItemsContainer.removeAllViews()
+                        emptyCartText.visibility = android.view.View.VISIBLE
+
+                        cartSubtotal = 0.0
+                        cartTax = 0.0
+                        cartTotal = 0.0
+                        amountPaid = 0.0
+                        remainingBalance = 0.0
+                        changeDue = 0.0
+
+                        subtotalText.text = "Subtotal: $0.00"
+                        taxText.text = "Tax: $0.00"
+                        totalText.text = "Total: $0.00"
+                        remainingBalanceAmount.text = "$0.00"
+
+                        searchBox.setText("")
+                        qtyBox.setText("")
+                        priceBox.setText("")
+                        discountBox.setText("")
+                        taxBox.setText("")
+                        paymentAmountBox.setText("")
+
+                        Toast.makeText(activity, "Sale completed", Toast.LENGTH_SHORT).show()
+                    }
+
+                } catch (e: Exception) {
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            activity,
+                            "Sale error: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
+
         applyPaymentButton.setOnClickListener {
 
             val paymentAmount = paymentAmountBox.text.toString().toDoubleOrNull()
@@ -1012,102 +1127,16 @@ class POSPage(private val activity: Activity) {
 
             remainingBalanceAmount.text = "$${"%.2f".format(remainingBalance)}"
             paymentAmountBox.setText("")
+
+            if (remainingBalance <= 0.1) {
+                completePaidTransaction()
+            }
         }
 
         completeSaleButton.setOnClickListener {
-
-            if (cartItems.isEmpty()) {
-                Toast.makeText(activity, "Cart is empty", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (amountPaid < cartTotal) {
-                Toast.makeText(activity, "Payment is not complete", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            CoroutineScope(Dispatchers.IO).launch {
-
-                try {
-
-                    val saleData = hashMapOf(
-                        "subtotal" to cartSubtotal,
-                        "tax" to cartTax,
-                        "total" to cartTotal,
-                        "paidAmount" to amountPaid,
-                        "changeDue" to maxOf(0.0, amountPaid - cartTotal),
-                        "timestamp" to Date(),
-                        "items" to cartItems.map { HashMap(it) }
-                    )
-
-                    db.collection("sales").add(saleData).await()
-
-                    cartItems.forEach { item ->
-
-                        val sku = item["sku"].toString()
-                        val quantitySold = item["quantity"].toString().toIntOrNull() ?: 0
-
-                        if (sku.isNotEmpty() && quantitySold > 0) {
-
-                            val productSnapshot = db.collection("products")
-                                .whereEqualTo("sku", sku)
-                                .limit(1)
-                                .get()
-                                .await()
-
-                            if (!productSnapshot.isEmpty) {
-
-                                val productDoc = productSnapshot.documents[0]
-                                val currentStock = productDoc.getLong("stock") ?: 0L
-                                val newStock = maxOf(0L, currentStock - quantitySold)
-
-                                db.collection("products")
-                                    .document(productDoc.id)
-                                    .update("stock", newStock)
-                                    .await()
-                            }
-                        }
-                    }
-
-                    withContext(Dispatchers.Main) {
-
-                        cartItems.clear()
-                        cartItemsContainer.removeAllViews()
-                        emptyCartText.visibility = android.view.View.VISIBLE
-
-                        cartSubtotal = 0.0
-                        cartTax = 0.0
-                        cartTotal = 0.0
-                        amountPaid = 0.0
-                        remainingBalance = 0.0
-
-                        subtotalText.text = "Subtotal: $0.00"
-                        taxText.text = "Tax: $0.00"
-                        totalText.text = "Total: $0.00"
-                        remainingBalanceAmount.text = "$0.00"
-                        paymentAmountBox.setText("")
-
-                        searchBox.setText("")
-                        qtyBox.setText("")
-                        priceBox.setText("")
-                        discountBox.setText("")
-                        taxBox.setText("")
-
-                        Toast.makeText(activity, "Sale completed", Toast.LENGTH_SHORT).show()
-                    }
-
-                } catch (e: Exception) {
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            activity,
-                            "Sale error: ${e.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
+            completePaidTransaction()
         }
+
 
         addButton.setOnClickListener {
             addSelectedProductToCart()
@@ -1157,8 +1186,14 @@ class POSPage(private val activity: Activity) {
                 .show()
         }
 
+        val rightScrollView = ScrollView(activity)
+        rightScrollView.isVerticalScrollBarEnabled = true
+        rightScrollView.isScrollbarFadingEnabled = false
+
+        rightScrollView.addView(rightPanel)
+
         page.addView(leftSide, leftParams)
-        page.addView(rightPanel, rightParams)
+        page.addView(rightScrollView, rightParams)
 
         return page
     }
