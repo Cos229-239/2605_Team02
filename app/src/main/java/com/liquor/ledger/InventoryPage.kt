@@ -29,6 +29,7 @@ class InventoryPage(private val activity: Activity) {
 
     private val KEY_COLORBLIND_MODE = "colorblind_mode"
     private val KEY_DARK_MODE = "dark_mode"
+    private val KEY_LOW_STOCK_ALERTS = "low_stock_alerts"
 
     // Check if current employee is a manager
     private val isManager = SessionManager.currentEmployee?.position == "Manager"
@@ -45,6 +46,9 @@ class InventoryPage(private val activity: Activity) {
     // Current search and filter values
     private var currentSearch = ""
     private var currentCategory = "All"
+
+    // Prevents the low stock popup from showing repeatedly
+    private var hasShownLowStockPopup = false
 
     fun build(): LinearLayout {
 
@@ -89,19 +93,33 @@ class InventoryPage(private val activity: Activity) {
                 loadProducts()
             }
 
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) {
+            }
 
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
+            }
         })
 
         // Category filter dropdown
         val categorySpinner = android.widget.Spinner(activity)
         val categories = arrayOf("All", "Alcohol", "Wine", "Beer", "Spirits", "Snacks", "Other")
+
         val spinnerAdapter = android.widget.ArrayAdapter(
             activity,
             android.R.layout.simple_spinner_item,
             categories
         )
+
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         categorySpinner.adapter = spinnerAdapter
 
@@ -110,6 +128,7 @@ class InventoryPage(private val activity: Activity) {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             1f
         )
+
         spinnerParams.setMargins(0, 0, dp(8), 0)
         categorySpinner.layoutParams = spinnerParams
 
@@ -259,6 +278,7 @@ class InventoryPage(private val activity: Activity) {
                 val lowStock = allProducts.count { product ->
                     val stock = product["stock"]?.toIntOrNull() ?: 0
                     val reorder = product["reorderPoint"]?.toIntOrNull() ?: 0
+
                     stock in 1..reorder
                 }
 
@@ -266,12 +286,27 @@ class InventoryPage(private val activity: Activity) {
                     (product["stock"]?.toIntOrNull() ?: 0) == 0
                 }
 
+                // Collect product names that are low stock
+                val lowStockProductNames = allProducts
+                    .filter { product ->
+                        val stock = product["stock"]?.toIntOrNull() ?: 0
+                        val reorder = product["reorderPoint"]?.toIntOrNull() ?: 0
+
+                        stock in 1..reorder
+                    }
+                    .map { product ->
+                        product["name"] ?: "Unnamed Item"
+                    }
+
                 withContext(Dispatchers.Main) {
                     // Update stats
                     totalProductsText.text = "Total Products\n$totalProducts"
                     inventoryValueText.text = "Inventory Value\n$${"%.2f".format(inventoryValue)}"
                     lowStockText.text = "Low Stock\n! $lowStock"
                     outOfStockText.text = "Out of Stock\nX $outOfStock"
+
+                    // Show low stock popup if Settings toggle is ON
+                    showLowStockAlertIfNeeded(lowStockProductNames)
 
                     productListContainer.removeAllViews()
 
@@ -281,6 +316,7 @@ class InventoryPage(private val activity: Activity) {
                         emptyText.textSize = 14f
                         emptyText.setTextColor(getMutedTextColor())
                         emptyText.setPadding(dp(16), dp(16), dp(16), dp(16))
+
                         productListContainer.addView(emptyText)
                     } else {
                         filtered.forEach { product ->
@@ -565,6 +601,9 @@ class InventoryPage(private val activity: Activity) {
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
 
+                        // Allow the low stock alert to show again after inventory changes
+                        hasShownLowStockPopup = false
+
                         loadProducts()
                     }
                 } catch (e: Exception) {
@@ -653,6 +692,9 @@ class InventoryPage(private val activity: Activity) {
                             "Stock updated: $currentStock → $newStock",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
+
+                        // Allow the low stock alert to show again after inventory changes
+                        hasShownLowStockPopup = false
 
                         loadProducts()
                     }
@@ -807,6 +849,43 @@ class InventoryPage(private val activity: Activity) {
         parent.addView(input)
 
         return input
+    }
+
+    private fun isLowStockAlertsEnabled(): Boolean {
+        return prefs.getBoolean(KEY_LOW_STOCK_ALERTS, false)
+    }
+
+    private fun showLowStockAlertIfNeeded(lowStockProductNames: List<String>) {
+
+        // If Low Stock Alerts are turned off in Settings, do nothing
+        if (!isLowStockAlertsEnabled()) {
+            return
+        }
+
+        // If there are no low-stock products, reset the popup flag
+        if (lowStockProductNames.isEmpty()) {
+            hasShownLowStockPopup = false
+            return
+        }
+
+        // Prevent repeated popups every time loadProducts() runs
+        if (hasShownLowStockPopup) {
+            return
+        }
+
+        hasShownLowStockPopup = true
+
+        val itemList = lowStockProductNames.joinToString(separator = "\n") { itemName ->
+            "• $itemName"
+        }
+
+        AlertDialog.Builder(activity)
+            .setTitle("Low Stock Alert")
+            .setMessage("The following item(s) are low in stock:\n\n$itemList")
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun isDarkModeEnabled(): Boolean {
