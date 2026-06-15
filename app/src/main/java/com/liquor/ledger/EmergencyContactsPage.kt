@@ -9,24 +9,32 @@ import android.widget.TextView
 
 class EmergencyContactsPage(private val activity: Activity) {
 
+    // Reads saved settings from SettingsPage
+    private val prefs = activity.getSharedPreferences("settings_prefs", Activity.MODE_PRIVATE)
+
+    private val KEY_COLORBLIND_MODE = "colorblind_mode"
+    private val KEY_DARK_MODE = "dark_mode"
+
     fun build(): ScrollView {
 
         val scrollView = ScrollView(activity)
+        scrollView.setBackgroundColor(getPageBackgroundColor())
 
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
         root.setPadding(20, 20, 20, 20)
+        root.setBackgroundColor(getPageBackgroundColor())
 
         val title = TextView(activity)
         title.text = "Emergency Contacts"
         title.textSize = 28f
         title.setTypeface(null, Typeface.BOLD)
-        title.setTextColor(Color.BLACK)
+        title.setTextColor(getPrimaryTextColor())
 
         val subtitle = TextView(activity)
         subtitle.text = "Important phone numbers for emergencies and support"
         subtitle.textSize = 14f
-        subtitle.setTextColor(Color.DKGRAY)
+        subtitle.setTextColor(getSecondaryTextColor())
         subtitle.setPadding(0, 10, 0, 30)
 
         root.addView(title)
@@ -34,6 +42,7 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         val topRow = LinearLayout(activity)
         topRow.orientation = LinearLayout.HORIZONTAL
+        topRow.setBackgroundColor(getPageBackgroundColor())
 
         topRow.addView(
             createSection(
@@ -68,6 +77,7 @@ class EmergencyContactsPage(private val activity: Activity) {
         val bottomRow = LinearLayout(activity)
         bottomRow.orientation = LinearLayout.HORIZONTAL
         bottomRow.setPadding(0, 20, 0, 0)
+        bottomRow.setBackgroundColor(getPageBackgroundColor())
 
         bottomRow.addView(
             createSection(
@@ -108,19 +118,19 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         protocolParams.topMargin = 25
 
-        protocolBox.setBackgroundColor(Color.rgb(255, 248, 248))
+        protocolBox.setBackgroundColor(getProtocolBackgroundColor())
 
         val protocolTitle = TextView(activity)
         protocolTitle.text = "⚠ EMERGENCY PROTOCOL"
         protocolTitle.textSize = 14f
         protocolTitle.setTypeface(null, Typeface.BOLD)
-        protocolTitle.setTextColor(Color.rgb(220, 38, 38))
+        protocolTitle.setTextColor(getEmergencyColor())
 
         val protocolText = TextView(activity)
         protocolText.text =
             "For life-threatening emergencies, always dial 911 first. Then contact store management and follow emergency procedures posted in the break room."
         protocolText.textSize = 13f
-        protocolText.setTextColor(Color.DKGRAY)
+        protocolText.setTextColor(getSecondaryTextColor())
 
         protocolBox.addView(protocolTitle)
         protocolBox.addView(protocolText)
@@ -140,6 +150,7 @@ class EmergencyContactsPage(private val activity: Activity) {
         val section = LinearLayout(activity)
         section.orientation = LinearLayout.VERTICAL
         section.setPadding(20, 20, 20, 20)
+        section.setBackgroundColor(getSectionBackgroundColor())
 
         val params = LinearLayout.LayoutParams(
             0,
@@ -148,19 +159,18 @@ class EmergencyContactsPage(private val activity: Activity) {
         )
 
         params.marginEnd = 12
-
-        section.setBackgroundColor(Color.WHITE)
+        section.layoutParams = params
 
         val sectionTitle = TextView(activity)
         sectionTitle.text = title
         sectionTitle.textSize = 18f
         sectionTitle.setTypeface(null, Typeface.BOLD)
+        sectionTitle.setTextColor(getPrimaryTextColor())
         sectionTitle.setPadding(0, 0, 0, 15)
 
         section.addView(sectionTitle)
 
         contacts.forEach {
-
             section.addView(
                 createContactCard(
                     it.first,
@@ -182,6 +192,7 @@ class EmergencyContactsPage(private val activity: Activity) {
         val card = LinearLayout(activity)
         card.orientation = LinearLayout.VERTICAL
         card.setPadding(25, 20, 25, 20)
+        card.setBackgroundColor(getCardBackgroundColor())
 
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -189,8 +200,7 @@ class EmergencyContactsPage(private val activity: Activity) {
         )
 
         params.bottomMargin = 15
-
-        card.setBackgroundColor(Color.rgb(250, 250, 250))
+        card.layoutParams = params
 
         val topRow = LinearLayout(activity)
         topRow.orientation = LinearLayout.HORIZONTAL
@@ -198,19 +208,13 @@ class EmergencyContactsPage(private val activity: Activity) {
         val nameView = TextView(activity)
         nameView.text = name
         nameView.textSize = 14f
-        nameView.setTextColor(Color.DKGRAY)
+        nameView.setTextColor(getSecondaryTextColor())
 
         val badge = TextView(activity)
         badge.text = type
         badge.textSize = 10f
         badge.setPadding(12, 4, 12, 4)
-
-        when (type) {
-            "EMERGENCY" -> badge.setTextColor(Color.rgb(220, 38, 38))
-            "HOTLINE" -> badge.setTextColor(Color.rgb(202, 138, 4))
-            "SERVICE" -> badge.setTextColor(Color.GRAY)
-            else -> badge.setTextColor(Color.rgb(37, 99, 235))
-        }
+        badge.setTextColor(getBadgeColor(type))
 
         val spacer = TextView(activity)
         spacer.layoutParams =
@@ -224,14 +228,113 @@ class EmergencyContactsPage(private val activity: Activity) {
         phoneView.text = phone
         phoneView.textSize = 18f
         phoneView.setTypeface(null, Typeface.BOLD)
-        phoneView.setTextColor(Color.rgb(59, 130, 246))
+        phoneView.setTextColor(getPhoneColor())
         phoneView.setPadding(0, 10, 0, 0)
 
         card.addView(topRow)
         card.addView(phoneView)
 
-        card.layoutParams = params
-
         return card
+    }
+
+    private fun isDarkModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_DARK_MODE, false)
+    }
+
+    private fun isColorblindModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_COLORBLIND_MODE, false)
+    }
+
+    private fun getPageBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(38, 38, 38)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    private fun getSectionBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(48, 48, 48)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    private fun getCardBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(60, 60, 60)
+        } else {
+            Color.rgb(250, 250, 250)
+        }
+    }
+
+    private fun getProtocolBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(65, 45, 45)
+        } else {
+            Color.rgb(255, 248, 248)
+        }
+    }
+
+    private fun getPrimaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.WHITE
+        } else {
+            Color.BLACK
+        }
+    }
+
+    private fun getSecondaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.LTGRAY
+        } else {
+            Color.DKGRAY
+        }
+    }
+
+    private fun getMutedTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(180, 180, 180)
+        } else {
+            Color.GRAY
+        }
+    }
+
+    private fun getPrimaryActionColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(37, 99, 235)
+        }
+    }
+
+    private fun getEmergencyColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(213, 94, 0)
+        } else {
+            Color.rgb(220, 38, 38)
+        }
+    }
+
+    private fun getWarningColor(): Int {
+        return Color.rgb(230, 159, 0)
+    }
+
+    private fun getPhoneColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(59, 130, 246)
+        }
+    }
+
+    private fun getBadgeColor(type: String): Int {
+        return when (type) {
+            "EMERGENCY" -> getEmergencyColor()
+            "HOTLINE" -> getWarningColor()
+            "SERVICE" -> getMutedTextColor()
+            else -> getPrimaryActionColor()
+        }
     }
 }

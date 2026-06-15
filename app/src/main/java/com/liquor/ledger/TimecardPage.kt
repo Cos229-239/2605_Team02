@@ -5,6 +5,8 @@ import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -25,11 +27,16 @@ import java.util.Locale
 // TimecardPage shows the weekly timesheet for the current employee
 // Managers can also view and edit other employees timesheets
 // via a dropdown at the top of the screen
-
 class TimecardPage(private val activity: Activity) {
 
     // Firestore instance
     private val db: FirebaseFirestore = FirebaseManager.db
+
+    // Reads saved settings from SettingsPage
+    private val prefs = activity.getSharedPreferences("settings_prefs", Activity.MODE_PRIVATE)
+
+    private val KEY_COLORBLIND_MODE = "colorblind_mode"
+    private val KEY_DARK_MODE = "dark_mode"
 
     // Current logged in employee
     private val currentEmployee = SessionManager.currentEmployee
@@ -38,7 +45,6 @@ class TimecardPage(private val activity: Activity) {
     private val isManager = currentEmployee?.position == "Manager"
 
     // The employee currently being viewed
-    // Defaults to the logged in employee
     private var viewingEmployee: Employee? = currentEmployee
 
     // List of all employees for the manager dropdown
@@ -71,7 +77,7 @@ class TimecardPage(private val activity: Activity) {
 
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
-        page.setBackgroundColor(Color.WHITE)
+        page.setBackgroundColor(getPageBackgroundColor())
 
         // TOP SECTION — employee selector for managers
         if (isManager) {
@@ -79,12 +85,12 @@ class TimecardPage(private val activity: Activity) {
             selectorRow.orientation = LinearLayout.HORIZONTAL
             selectorRow.gravity = Gravity.CENTER_VERTICAL
             selectorRow.setPadding(dp(16), dp(12), dp(16), dp(12))
-            selectorRow.setBackgroundColor(Color.rgb(248, 249, 250))
+            selectorRow.setBackgroundColor(getSectionBackgroundColor())
 
             val selectorLabel = TextView(activity)
             selectorLabel.text = "Viewing: "
             selectorLabel.textSize = 14f
-            selectorLabel.setTextColor(Color.rgb(55, 65, 81))
+            selectorLabel.setTextColor(getSecondaryTextColor())
 
             val employeeSpinner = Spinner(activity)
             val spinnerParams = LinearLayout.LayoutParams(
@@ -98,7 +104,6 @@ class TimecardPage(private val activity: Activity) {
             selectorRow.addView(employeeSpinner, spinnerParams)
             page.addView(selectorRow)
 
-            // Load employees for dropdown
             loadEmployeesForDropdown(employeeSpinner)
         }
 
@@ -107,6 +112,7 @@ class TimecardPage(private val activity: Activity) {
         weekNav.orientation = LinearLayout.HORIZONTAL
         weekNav.gravity = Gravity.CENTER_VERTICAL
         weekNav.setPadding(dp(16), dp(12), dp(16), dp(12))
+        weekNav.setBackgroundColor(getPageBackgroundColor())
 
         val prevWeekBtn = makeNavButton("< Prev")
         prevWeekBtn.setOnClickListener {
@@ -116,11 +122,14 @@ class TimecardPage(private val activity: Activity) {
 
         weekRangeLabel = TextView(activity)
         weekRangeLabel.textSize = 15f
-        weekRangeLabel.setTextColor(Color.BLACK)
+        weekRangeLabel.setTextColor(getPrimaryTextColor())
         weekRangeLabel.setTypeface(null, Typeface.BOLD)
         weekRangeLabel.gravity = Gravity.CENTER
         weekRangeLabel.layoutParams = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
 
         val nextWeekBtn = makeNavButton("Next >")
         nextWeekBtn.setOnClickListener {
@@ -137,10 +146,11 @@ class TimecardPage(private val activity: Activity) {
         totalHoursLabel = TextView(activity)
         totalHoursLabel.text = "Total Hours This Week: 0.00 hrs"
         totalHoursLabel.textSize = 14f
-        totalHoursLabel.setTextColor(Color.rgb(45, 95, 255))
+        totalHoursLabel.setTextColor(getPrimaryActionColor())
         totalHoursLabel.setTypeface(null, Typeface.BOLD)
         totalHoursLabel.setPadding(dp(16), dp(8), dp(16), dp(8))
         totalHoursLabel.gravity = Gravity.END
+        totalHoursLabel.setBackgroundColor(getPageBackgroundColor())
         page.addView(totalHoursLabel)
 
         // TABLE HEADER
@@ -148,6 +158,8 @@ class TimecardPage(private val activity: Activity) {
 
         // SCROLLABLE TIMESHEET
         val scrollView = ScrollView(activity)
+        scrollView.setBackgroundColor(getPageBackgroundColor())
+
         val scrollParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             0,
@@ -156,6 +168,8 @@ class TimecardPage(private val activity: Activity) {
 
         timesheetContainer = LinearLayout(activity)
         timesheetContainer.orientation = LinearLayout.VERTICAL
+        timesheetContainer.setBackgroundColor(getPageBackgroundColor())
+
         scrollView.addView(timesheetContainer)
         page.addView(scrollView, scrollParams)
 
@@ -166,7 +180,7 @@ class TimecardPage(private val activity: Activity) {
             reportsBtn.textSize = 14f
             reportsBtn.gravity = Gravity.CENTER
             reportsBtn.setTextColor(Color.WHITE)
-            reportsBtn.setBackgroundColor(Color.rgb(45, 95, 255))
+            reportsBtn.setBackgroundColor(getPrimaryActionColor())
             reportsBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
 
             val reportsBtnParams = LinearLayout.LayoutParams(
@@ -177,7 +191,6 @@ class TimecardPage(private val activity: Activity) {
             reportsBtn.layoutParams = reportsBtnParams
 
             reportsBtn.setOnClickListener {
-                // Replace the timecard page with the reports page
                 val parent = page.parent as? LinearLayout
                 if (parent != null) {
                     parent.removeAllViews()
@@ -196,20 +209,20 @@ class TimecardPage(private val activity: Activity) {
         val buttonRow = LinearLayout(activity)
         buttonRow.orientation = LinearLayout.HORIZONTAL
         buttonRow.setPadding(dp(16), dp(12), dp(16), dp(12))
-        buttonRow.setBackgroundColor(Color.rgb(248, 249, 250))
+        buttonRow.setBackgroundColor(getSectionBackgroundColor())
 
         val buttonParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
 
-        clockInBtn = makeClockButton("Clock In", Color.rgb(34, 197, 94))
+        clockInBtn = makeClockButton("Clock In", getPositiveColor())
         clockInBtn.setOnClickListener { clockIn() }
 
-        clockOutBtn = makeClockButton("Clock Out", Color.rgb(239, 68, 68))
+        clockOutBtn = makeClockButton("Clock Out", getNegativeColor())
         clockOutBtn.setOnClickListener { clockOut() }
 
-        breakBtn = makeClockButton("Break Out", Color.rgb(245, 158, 11))
+        breakBtn = makeClockButton("Break Out", getWarningColor())
         breakBtn.setOnClickListener { toggleBreak() }
 
         buttonRow.addView(clockInBtn)
@@ -218,7 +231,6 @@ class TimecardPage(private val activity: Activity) {
 
         page.addView(buttonRow, buttonParams)
 
-        // Load the timesheet
         loadTimesheet()
 
         return page
@@ -242,20 +254,16 @@ class TimecardPage(private val activity: Activity) {
                 withContext(Dispatchers.Main) {
                     allEmployees = employees
                     val names = employees.map { it.name }
-                    val adapter = ArrayAdapter(
-                        activity,
-                        android.R.layout.simple_spinner_item,
-                        names
-                    )
-                    adapter.setDropDownViewResource(
-                        android.R.layout.simple_spinner_dropdown_item)
+                    val adapter = makeSpinnerAdapter(names)
                     spinner.adapter = adapter
 
-                    // Default to current employee
                     val currentIndex = employees.indexOfFirst {
                         it.employeeId == currentEmployee?.employeeId
                     }
-                    if (currentIndex >= 0) spinner.setSelection(currentIndex)
+
+                    if (currentIndex >= 0) {
+                        spinner.setSelection(currentIndex)
+                    }
 
                     spinner.onItemSelectedListener =
                         object : android.widget.AdapterView.OnItemSelectedListener {
@@ -268,8 +276,11 @@ class TimecardPage(private val activity: Activity) {
                                 viewingEmployee = employees[position]
                                 loadTimesheet()
                             }
+
                             override fun onNothingSelected(
-                                parent: android.widget.AdapterView<*>?) {}
+                                parent: android.widget.AdapterView<*>?
+                            ) {
+                            }
                         }
                 }
             } catch (e: Exception) {
@@ -286,17 +297,17 @@ class TimecardPage(private val activity: Activity) {
 
         val weekEnd = getWeekEnd(currentWeekStart)
 
-        // Update week range label
         val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
         val yearFormat = SimpleDateFormat("yyyy", Locale.getDefault())
+
         weekRangeLabel.text = "Week of ${dateFormat.format(currentWeekStart.time)}" +
-            " - ${dateFormat.format(weekEnd.time)}" +
-            ", ${yearFormat.format(weekEnd.time)}"
+                " - ${dateFormat.format(weekEnd.time)}" +
+                ", ${yearFormat.format(weekEnd.time)}"
 
         val loadingText = TextView(activity)
         loadingText.text = "Loading..."
         loadingText.textSize = 14f
-        loadingText.setTextColor(Color.GRAY)
+        loadingText.setTextColor(getMutedTextColor())
         loadingText.setPadding(dp(16), dp(16), dp(16), dp(16))
         timesheetContainer.addView(loadingText)
 
@@ -304,16 +315,16 @@ class TimecardPage(private val activity: Activity) {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Get all timecards for this employee
                 val snapshot = db.collection("timecards")
                     .whereEqualTo("employeeId", employeeId)
                     .get()
                     .await()
 
-                // Build a map of date string to timecard document
                 val timecardMap = mutableMapOf<String, Map<String, Any?>>()
+
                 snapshot.documents.forEach { doc ->
                     val date = doc.getString("date") ?: ""
+
                     if (date.isNotEmpty()) {
                         timecardMap[date] = mapOf(
                             "docId" to doc.id,
@@ -328,56 +339,67 @@ class TimecardPage(private val activity: Activity) {
                     }
                 }
 
-                // Check for active timecard today
                 val todayStr = SimpleDateFormat(
-                    "yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
+                    "yyyy-MM-dd",
+                    Locale.getDefault()
+                ).format(Calendar.getInstance().time)
+
                 val todayCard = timecardMap[todayStr]
                 val hasClockIn = todayCard?.get("clockIn") != null
                 val hasClockOut = todayCard?.get("clockOut") != null
                 val hasBreakStart = todayCard?.get("breakStart") != null
                 val hasBreakEnd = todayCard?.get("breakEnd") != null
+
                 activeTimecardId = todayCard?.get("docId") as? String
                 onBreak = hasBreakStart && !hasBreakEnd
 
                 withContext(Dispatchers.Main) {
                     timesheetContainer.removeAllViews()
 
-                    // Update button states
                     updateButtonStates(hasClockIn, hasClockOut)
 
                     var totalMinutes = 0.0
 
-                    // Generate a row for each day of the week
                     val cal = currentWeekStart.clone() as Calendar
+
                     for (i in 0..6) {
                         val dateStr = SimpleDateFormat(
-                            "yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).format(cal.time)
+
                         val dayName = SimpleDateFormat(
-                            "EEEE", Locale.getDefault()).format(cal.time)
+                            "EEEE",
+                            Locale.getDefault()
+                        ).format(cal.time)
+
                         val displayDate = SimpleDateFormat(
-                            "yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).format(cal.time)
 
                         val timecard = timecardMap[dateStr]
-                        val row = makeTimesheetRow(
-                            displayDate, dayName, timecard)
+                        val row = makeTimesheetRow(displayDate, dayName, timecard)
+
                         timesheetContainer.addView(row)
 
-                        // Add to total hours
                         val hours = timecard?.get("hoursWorked") as? Double ?: 0.0
                         totalMinutes += hours * 60
 
-                        // Divider
                         val divider = android.view.View(activity)
-                        divider.setBackgroundColor(Color.rgb(229, 231, 235))
+                        divider.setBackgroundColor(getDividerColor())
+
                         timesheetContainer.addView(
                             divider,
                             LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.MATCH_PARENT, 1))
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                1
+                            )
+                        )
 
                         cal.add(Calendar.DAY_OF_WEEK, 1)
                     }
 
-                    // Update total hours
                     val totalHours = totalMinutes / 60
                     totalHoursLabel.text =
                         "Total Hours This Week: ${"%.2f".format(totalHours)} hrs"
@@ -386,11 +408,13 @@ class TimecardPage(private val activity: Activity) {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     timesheetContainer.removeAllViews()
+
                     val errorText = TextView(activity)
                     errorText.text = "Error loading timesheet: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+                    errorText.setTextColor(getNegativeColor())
                     errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
+
                     timesheetContainer.addView(errorText)
                 }
             }
@@ -408,6 +432,7 @@ class TimecardPage(private val activity: Activity) {
         row.orientation = LinearLayout.HORIZONTAL
         row.setPadding(dp(16), dp(12), dp(16), dp(12))
         row.gravity = Gravity.CENTER_VERTICAL
+        row.setBackgroundColor(getPageBackgroundColor())
 
         val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
@@ -430,9 +455,9 @@ class TimecardPage(private val activity: Activity) {
         }
 
         val statusColor = when (displayStatus) {
-            "Completed" -> Color.rgb(34, 197, 94)
-            "In Progress" -> Color.rgb(45, 95, 255)
-            else -> Color.GRAY
+            "Completed" -> getPositiveColor()
+            "In Progress" -> getPrimaryActionColor()
+            else -> getMutedTextColor()
         }
 
         row.addView(makeRowCell(date, 2f))
@@ -447,13 +472,17 @@ class TimecardPage(private val activity: Activity) {
         statusCell.textSize = 13f
         statusCell.setTextColor(statusColor)
         statusCell.layoutParams = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
         row.addView(statusCell)
 
-        // Manager can click a row to edit it
         if (isManager && timecard != null) {
             row.isClickable = true
             row.isFocusable = true
+
             row.setOnClickListener {
                 showEditTimecardDialog(
                     timecard["docId"] as? String ?: "",
@@ -475,13 +504,17 @@ class TimecardPage(private val activity: Activity) {
         val employeeName = viewingEmployee?.name ?: ""
 
         val today = SimpleDateFormat(
-            "yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time)
+            "yyyy-MM-dd",
+            Locale.getDefault()
+        ).format(Calendar.getInstance().time)
+
         val dayName = SimpleDateFormat(
-            "EEEE", Locale.getDefault()).format(Calendar.getInstance().time)
+            "EEEE",
+            Locale.getDefault()
+        ).format(Calendar.getInstance().time)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Check if already clocked in today
                 val existing = db.collection("timecards")
                     .whereEqualTo("employeeId", employeeId)
                     .whereEqualTo("date", today)
@@ -499,7 +532,6 @@ class TimecardPage(private val activity: Activity) {
                     return@launch
                 }
 
-                // Create new timecard document
                 val newTimecard = hashMapOf(
                     "employeeId" to employeeId,
                     "employeeName" to employeeName,
@@ -523,6 +555,7 @@ class TimecardPage(private val activity: Activity) {
                         "Clocked in successfully",
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
+
                     loadTimesheet()
                 }
 
@@ -551,7 +584,6 @@ class TimecardPage(private val activity: Activity) {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Get the current timecard
                 val doc = db.collection("timecards")
                     .document(docId)
                     .get()
@@ -561,11 +593,12 @@ class TimecardPage(private val activity: Activity) {
                 val breakMinutes = doc.getLong("breakMinutes") ?: 0L
                 val clockOutTime = Timestamp.now()
 
-                // Calculate hours worked
                 val totalMinutes = if (clockInTime != null) {
                     val diff = clockOutTime.toDate().time - clockInTime.toDate().time
                     (diff / 1000 / 60).toDouble()
-                } else 0.0
+                } else {
+                    0.0
+                }
 
                 val netMinutes = totalMinutes - breakMinutes
                 val hoursWorked = netMinutes / 60
@@ -587,6 +620,7 @@ class TimecardPage(private val activity: Activity) {
                         "Clocked out. Hours worked: ${"%.2f".format(hoursWorked)}",
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
+
                     loadTimesheet()
                 }
 
@@ -616,7 +650,6 @@ class TimecardPage(private val activity: Activity) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (!onBreak) {
-                    // Starting break — record break start
                     db.collection("timecards")
                         .document(docId)
                         .update("breakStart", Timestamp.now())
@@ -626,7 +659,8 @@ class TimecardPage(private val activity: Activity) {
 
                     withContext(Dispatchers.Main) {
                         breakBtn.text = "Break In"
-                        breakBtn.setBackgroundColor(Color.rgb(34, 197, 94))
+                        breakBtn.setBackgroundColor(getPositiveColor())
+
                         android.widget.Toast.makeText(
                             activity,
                             "Break started",
@@ -635,7 +669,6 @@ class TimecardPage(private val activity: Activity) {
                     }
 
                 } else {
-                    // Ending break — record break end and calculate break minutes
                     val doc = db.collection("timecards")
                         .document(docId)
                         .get()
@@ -648,7 +681,9 @@ class TimecardPage(private val activity: Activity) {
                     val newBreakMinutes = if (breakStart != null) {
                         val diff = breakEnd.toDate().time - breakStart.toDate().time
                         existingBreakMinutes + (diff / 1000 / 60)
-                    } else existingBreakMinutes
+                    } else {
+                        existingBreakMinutes
+                    }
 
                     db.collection("timecards")
                         .document(docId)
@@ -664,12 +699,14 @@ class TimecardPage(private val activity: Activity) {
 
                     withContext(Dispatchers.Main) {
                         breakBtn.text = "Break Out"
-                        breakBtn.setBackgroundColor(Color.rgb(245, 158, 11))
+                        breakBtn.setBackgroundColor(getWarningColor())
+
                         android.widget.Toast.makeText(
                             activity,
                             "Break ended. Total break: ${newBreakMinutes} min",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
+
                         loadTimesheet()
                     }
                 }
@@ -703,26 +740,27 @@ class TimecardPage(private val activity: Activity) {
         val form = LinearLayout(activity)
         form.orientation = LinearLayout.VERTICAL
         form.setPadding(dp(20), dp(10), dp(20), dp(10))
+        form.setBackgroundColor(getPageBackgroundColor())
 
-        // Clock In input
         val clockInLabel = makeDialogLabel("Clock In (HH:mm)")
         val clockInInput = makeDialogInput(
-            currentClockIn?.let { timeFormat.format(it.toDate()) } ?: "")
+            currentClockIn?.let { timeFormat.format(it.toDate()) } ?: ""
+        )
 
-        // Clock Out input
         val clockOutLabel = makeDialogLabel("Clock Out (HH:mm)")
         val clockOutInput = makeDialogInput(
-            currentClockOut?.let { timeFormat.format(it.toDate()) } ?: "")
+            currentClockOut?.let { timeFormat.format(it.toDate()) } ?: ""
+        )
 
-        // Break Start input
         val breakStartLabel = makeDialogLabel("Break Start (HH:mm)")
         val breakStartInput = makeDialogInput(
-            currentBreakStart?.let { timeFormat.format(it.toDate()) } ?: "")
+            currentBreakStart?.let { timeFormat.format(it.toDate()) } ?: ""
+        )
 
-        // Break End input
         val breakEndLabel = makeDialogLabel("Break End (HH:mm)")
         val breakEndInput = makeDialogInput(
-            currentBreakEnd?.let { timeFormat.format(it.toDate()) } ?: "")
+            currentBreakEnd?.let { timeFormat.format(it.toDate()) } ?: ""
+        )
 
         form.addView(clockInLabel)
         form.addView(clockInInput)
@@ -746,7 +784,10 @@ class TimecardPage(private val activity: Activity) {
             )
         }
 
-        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+
         builder.show()
     }
 
@@ -766,10 +807,14 @@ class TimecardPage(private val activity: Activity) {
                 fun parseTime(timeStr: String): Timestamp? {
                     return if (timeStr.isNotEmpty()) {
                         try {
-                            val date = dateFormat.parse("$date $timeStr")
-                            date?.let { Timestamp(it) }
-                        } catch (e: Exception) { null }
-                    } else null
+                            val dateValue = dateFormat.parse("$date $timeStr")
+                            dateValue?.let { Timestamp(it) }
+                        } catch (e: Exception) {
+                            null
+                        }
+                    } else {
+                        null
+                    }
                 }
 
                 val clockIn = parseTime(clockInStr)
@@ -777,21 +822,26 @@ class TimecardPage(private val activity: Activity) {
                 val breakStart = parseTime(breakStartStr)
                 val breakEnd = parseTime(breakEndStr)
 
-                // Recalculate break minutes
                 val breakMinutes = if (breakStart != null && breakEnd != null) {
                     val diff = breakEnd.toDate().time - breakStart.toDate().time
                     diff / 1000 / 60
-                } else 0L
+                } else {
+                    0L
+                }
 
-                // Recalculate hours worked
                 val hoursWorked = if (clockIn != null && clockOut != null) {
                     val totalMinutes = (clockOut.toDate().time -
-                        clockIn.toDate().time) / 1000 / 60
+                            clockIn.toDate().time) / 1000 / 60
                     (totalMinutes - breakMinutes).toDouble() / 60
-                } else 0.0
+                } else {
+                    0.0
+                }
 
-                val status = if (clockIn != null && clockOut != null)
-                    "Completed" else "In Progress"
+                val status = if (clockIn != null && clockOut != null) {
+                    "Completed"
+                } else {
+                    "In Progress"
+                }
 
                 db.collection("timecards")
                     .document(docId)
@@ -814,6 +864,7 @@ class TimecardPage(private val activity: Activity) {
                         "Timecard updated successfully",
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
+
                     loadTimesheet()
                 }
 
@@ -831,17 +882,17 @@ class TimecardPage(private val activity: Activity) {
 
     // Updates clock in/out/break button states
     private fun updateButtonStates(hasClockIn: Boolean, hasClockOut: Boolean) {
-        // Only show buttons when viewing your own timecard
-        // or when manager is viewing someone else
         val isCurrentWeek = isCurrentWeek(currentWeekStart)
 
         if (!isCurrentWeek) {
             clockInBtn.isEnabled = false
             clockOutBtn.isEnabled = false
             breakBtn.isEnabled = false
+
             clockInBtn.alpha = 0.5f
             clockOutBtn.alpha = 0.5f
             breakBtn.alpha = 0.5f
+
             return
         }
 
@@ -855,8 +906,11 @@ class TimecardPage(private val activity: Activity) {
 
         breakBtn.text = if (onBreak) "Break In" else "Break Out"
         breakBtn.setBackgroundColor(
-            if (onBreak) Color.rgb(34, 197, 94)
-            else Color.rgb(245, 158, 11)
+            if (onBreak) {
+                getPositiveColor()
+            } else {
+                getWarningColor()
+            }
         )
     }
 
@@ -881,9 +935,10 @@ class TimecardPage(private val activity: Activity) {
     // Checks if the given week start is the current week
     private fun isCurrentWeek(weekStart: Calendar): Boolean {
         val currentWeek = getWeekStart(Calendar.getInstance())
+
         return weekStart.get(Calendar.WEEK_OF_YEAR) ==
-            currentWeek.get(Calendar.WEEK_OF_YEAR) &&
-            weekStart.get(Calendar.YEAR) == currentWeek.get(Calendar.YEAR)
+                currentWeek.get(Calendar.WEEK_OF_YEAR) &&
+                weekStart.get(Calendar.YEAR) == currentWeek.get(Calendar.YEAR)
     }
 
     // Creates the table header
@@ -891,7 +946,7 @@ class TimecardPage(private val activity: Activity) {
         val header = LinearLayout(activity)
         header.orientation = LinearLayout.HORIZONTAL
         header.setPadding(dp(16), dp(10), dp(16), dp(10))
-        header.setBackgroundColor(Color.rgb(248, 249, 250))
+        header.setBackgroundColor(getSectionBackgroundColor())
 
         listOf(
             Pair("Date", 2f),
@@ -905,10 +960,14 @@ class TimecardPage(private val activity: Activity) {
             val cell = TextView(activity)
             cell.text = text
             cell.textSize = 12f
-            cell.setTextColor(Color.rgb(107, 114, 128))
+            cell.setTextColor(getMutedTextColor())
             cell.setTypeface(null, Typeface.BOLD)
             cell.layoutParams = LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                weight
+            )
+
             header.addView(cell)
         }
 
@@ -920,9 +979,13 @@ class TimecardPage(private val activity: Activity) {
         val cell = TextView(activity)
         cell.text = text
         cell.textSize = 13f
-        cell.setTextColor(Color.rgb(55, 65, 81))
+        cell.setTextColor(getSecondaryTextColor())
         cell.layoutParams = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            weight
+        )
+
         return cell
     }
 
@@ -937,9 +1000,13 @@ class TimecardPage(private val activity: Activity) {
         btn.setPadding(dp(16), dp(14), dp(16), dp(14))
 
         val params = LinearLayout.LayoutParams(
-            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
         params.setMargins(dp(4), 0, dp(4), 0)
         btn.layoutParams = params
+
         return btn
     }
 
@@ -949,11 +1016,13 @@ class TimecardPage(private val activity: Activity) {
         btn.text = text
         btn.textSize = 14f
         btn.gravity = Gravity.CENTER
-        btn.setTextColor(Color.rgb(45, 95, 255))
+        btn.setTextColor(getPrimaryActionColor())
         btn.setPadding(dp(12), dp(8), dp(12), dp(8))
         btn.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT)
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
         return btn
     }
 
@@ -962,8 +1031,9 @@ class TimecardPage(private val activity: Activity) {
         val label = TextView(activity)
         label.text = text
         label.textSize = 13f
-        label.setTextColor(Color.GRAY)
+        label.setTextColor(getMutedTextColor())
         label.setPadding(0, dp(8), 0, dp(2))
+
         return label
     }
 
@@ -972,16 +1042,147 @@ class TimecardPage(private val activity: Activity) {
         val input = android.widget.EditText(activity)
         input.setText(defaultValue)
         input.textSize = 14f
-        input.setTextColor(Color.BLACK)
+        input.setTextColor(getPrimaryTextColor())
+        input.setHintTextColor(getMutedTextColor())
         input.setPadding(dp(8), dp(8), dp(8), dp(8))
-        input.setBackgroundColor(Color.rgb(243, 244, 246))
+        input.setBackgroundColor(getInputBackgroundColor())
 
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT)
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
         params.setMargins(0, 0, 0, dp(4))
         input.layoutParams = params
+
         return input
+    }
+
+    private fun makeSpinnerAdapter(items: List<String>): ArrayAdapter<String> {
+        return object : ArrayAdapter<String>(
+            activity,
+            android.R.layout.simple_spinner_item,
+            items
+        ) {
+            override fun getView(
+                position: Int,
+                convertView: View?,
+                parent: ViewGroup
+            ): View {
+                val view = super.getView(position, convertView, parent) as TextView
+                view.setTextColor(getPrimaryTextColor())
+                view.setBackgroundColor(getInputBackgroundColor())
+                view.textSize = 14f
+                view.setPadding(dp(8), dp(8), dp(8), dp(8))
+                return view
+            }
+
+            override fun getDropDownView(
+                position: Int,
+                convertView: View?,
+                parent: ViewGroup
+            ): View {
+                val view = super.getDropDownView(position, convertView, parent) as TextView
+                view.setTextColor(getPrimaryTextColor())
+                view.setBackgroundColor(getInputBackgroundColor())
+                view.textSize = 14f
+                view.setPadding(dp(8), dp(8), dp(8), dp(8))
+                return view
+            }
+        }.also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+    }
+
+    private fun isDarkModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_DARK_MODE, false)
+    }
+
+    private fun isColorblindModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_COLORBLIND_MODE, false)
+    }
+
+    private fun getPageBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(38, 38, 38)
+        } else {
+            Color.WHITE
+        }
+    }
+
+    private fun getSectionBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(48, 48, 48)
+        } else {
+            Color.rgb(248, 249, 250)
+        }
+    }
+
+    private fun getInputBackgroundColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(60, 60, 60)
+        } else {
+            Color.rgb(243, 244, 246)
+        }
+    }
+
+    private fun getPrimaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.WHITE
+        } else {
+            Color.BLACK
+        }
+    }
+
+    private fun getSecondaryTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.LTGRAY
+        } else {
+            Color.rgb(55, 65, 81)
+        }
+    }
+
+    private fun getMutedTextColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(180, 180, 180)
+        } else {
+            Color.GRAY
+        }
+    }
+
+    private fun getDividerColor(): Int {
+        return if (isDarkModeEnabled()) {
+            Color.rgb(80, 80, 80)
+        } else {
+            Color.rgb(229, 231, 235)
+        }
+    }
+
+    private fun getPrimaryActionColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(45, 95, 255)
+        }
+    }
+
+    private fun getPositiveColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(34, 197, 94)
+        }
+    }
+
+    private fun getWarningColor(): Int {
+        return Color.rgb(230, 159, 0)
+    }
+
+    private fun getNegativeColor(): Int {
+        return if (isColorblindModeEnabled()) {
+            Color.rgb(213, 94, 0)
+        } else {
+            Color.rgb(239, 68, 68)
+        }
     }
 
     // Converts dp to pixels
