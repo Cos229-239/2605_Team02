@@ -9,8 +9,8 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
   // Require authentication
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Must be logged in to process payments"
+        "unauthenticated",
+        "Must be logged in to process payments",
     );
   }
 
@@ -19,8 +19,8 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
 
   if (!amount || amount <= 0) {
     throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Invalid payment amount"
+        "invalid-argument",
+        "Invalid payment amount",
     );
   }
 
@@ -39,11 +39,10 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     };
-
   } catch (error) {
     throw new functions.https.HttpsError(
-      "internal",
-      error.message
+        "internal",
+        error.message,
     );
   }
 });
