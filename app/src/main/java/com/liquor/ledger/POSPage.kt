@@ -1018,7 +1018,7 @@ class POSPage(private val activity: Activity) {
                         "items" to cartItems.map { HashMap(it) }
                     )
 
-                    db.collection("sales").add(saleData).await()
+                    db.collection("transactions").add(saleData).await()
 
                     cartItems.forEach { item ->
 
