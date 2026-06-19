@@ -1018,7 +1018,7 @@ class POSPage(private val activity: Activity) {
                         "items" to cartItems.map { HashMap(it) }
                     )
 
-                    db.collection("sales").add(saleData).await()
+                    db.collection("transactions").add(saleData).await()
 
                     cartItems.forEach { item ->
 
@@ -1093,6 +1093,8 @@ class POSPage(private val activity: Activity) {
             }
         }
 
+        /* Temporary Comment in case of implementation error.
+
         applyPaymentButton.setOnClickListener {
 
             val paymentAmount = paymentAmountBox.text.toString().toDoubleOrNull()
@@ -1140,6 +1142,89 @@ class POSPage(private val activity: Activity) {
 
         addButton.setOnClickListener {
             addSelectedProductToCart()
+        }
+
+        */
+
+        applyPaymentButton.setOnClickListener {
+
+            if (cartTotal <= 0.0) {
+                Toast.makeText(activity, "Cart is empty", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val paymentText = paymentAmountBox.text.toString().trim()
+
+            // If no cash amount is entered, offer card payment
+            if (paymentText.isEmpty()) {
+
+                AlertDialog.Builder(activity)
+                    .setTitle("Card Payment")
+                    .setMessage("No cash amount was entered. Process this payment as a card payment?")
+                    .setPositiveButton("Yes") { dialog, _ ->
+
+                        dialog.dismiss()
+
+                        // Stripe payment processing will go here later
+
+                        Toast.makeText(
+                            activity,
+                            "Card payment approved",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        amountPaid = cartTotal
+                        remainingBalance = 0.0
+                        changeDue = 0.0
+
+                        remainingBalanceAmount.text = "$0.00"
+                        paymentAmountBox.setText("")
+
+                        completePaidTransaction()
+                    }
+                    .setNegativeButton("No") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+
+                return@setOnClickListener
+            }
+
+            val paymentAmount = paymentText.toDoubleOrNull()
+
+            if (paymentAmount == null || paymentAmount <= 0.0) {
+                Toast.makeText(activity, "Enter a valid payment amount", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            amountPaid += paymentAmount
+            remainingBalance = cartTotal - amountPaid
+
+            // Customer paid more than the total, calculate change
+            if (remainingBalance < 0.0) {
+
+                changeDue = amountPaid - cartTotal
+                remainingBalance = 0.0
+
+                AlertDialog.Builder(activity)
+                    .setTitle("Change Due")
+                    .setMessage("$${"%.2f".format(changeDue)}")
+                    .setPositiveButton("OK") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+
+            } else {
+
+                changeDue = 0.0
+            }
+
+            remainingBalanceAmount.text = "$${"%.2f".format(remainingBalance)}"
+            paymentAmountBox.setText("")
+
+            if (remainingBalance <= 0.1) {
+                completePaidTransaction()
+            }
         }
 
         newTransactionButton.setOnClickListener {
