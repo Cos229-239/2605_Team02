@@ -29,38 +29,25 @@ class InventoryReportPage(private val activity: Activity) {
     fun build(): LinearLayout {
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
-
-        // Changes root background based on Settings - AF
-        root.setBackgroundColor(ThemeManager.pageBackground(activity))
+        root.setBackgroundColor(Color.WHITE)
 
         val scrollView = ScrollView(activity)
 
-        // Changes scroll area background based on Settings - AF
-        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
-
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
-
-        // Changes page background based on Settings - AF
-        page.setBackgroundColor(ThemeManager.pageBackground(activity))
-
+        page.setBackgroundColor(Color.WHITE)
         page.setPadding(40, 40, 40, 40)
 
         val title = TextView(activity)
         title.text = "Inventory Report"
         title.textSize = 28f
         title.setTypeface(null, Typeface.BOLD)
-
-        // Changes title color based on Settings - AF
-        title.setTextColor(ThemeManager.primaryText(activity))
+        title.setTextColor(Color.BLACK)
 
         val subtitle = TextView(activity)
         subtitle.text = "Summary of product count, stock status, and total inventory value."
         subtitle.textSize = 16f
-
-        // Changes subtitle color based on Settings - AF
-        subtitle.setTextColor(ThemeManager.secondaryText(activity))
-
+        subtitle.setTextColor(Color.DKGRAY)
         subtitle.setPadding(0, 10, 0, 30)
 
         val summaryRow1 = LinearLayout(activity)
@@ -70,11 +57,10 @@ class InventoryReportPage(private val activity: Activity) {
         summaryRow2.orientation = LinearLayout.HORIZONTAL
         summaryRow2.setPadding(0, 16, 0, 24)
 
-        // Changes summary card colors based on Settings - AF
-        totalProductsCard = makeSummaryCard("Total Products", "0", ThemeManager.primaryAction(activity))
-        lowStockCard = makeSummaryCard("Low Stock", "0", ThemeManager.warning(activity))
-        outOfStockCard = makeSummaryCard("Out of Stock", "0", ThemeManager.negative(activity))
-        inventoryValueCard = makeSummaryCard("Inventory Value", "$0.00", ThemeManager.positive(activity))
+        totalProductsCard = makeSummaryCard("Total Products", "0", Color.rgb(45, 95, 255))
+        lowStockCard = makeSummaryCard("Low Stock", "0", Color.rgb(230, 149, 62))
+        outOfStockCard = makeSummaryCard("Out of Stock", "0", Color.RED)
+        inventoryValueCard = makeSummaryCard("Inventory Value", "$0.00", Color.rgb(20, 180, 120))
 
         summaryRow1.addView(totalProductsCard)
         summaryRow1.addView(lowStockCard)
@@ -86,22 +72,14 @@ class InventoryReportPage(private val activity: Activity) {
         detailTitle.text = "Inventory Overview"
         detailTitle.textSize = 20f
         detailTitle.setTypeface(null, Typeface.BOLD)
-
-        // Changes detail title color based on Settings - AF
-        detailTitle.setTextColor(ThemeManager.primaryText(activity))
-
+        detailTitle.setTextColor(Color.BLACK)
         detailTitle.setPadding(0, 10, 0, 12)
 
         val detailText = TextView(activity)
         detailText.text = "Loading inventory report..."
         detailText.textSize = 16f
-
-        // Changes detail text color based on Settings - AF
-        detailText.setTextColor(ThemeManager.secondaryText(activity))
-
-        // Changes detail box background based on Settings - AF
-        detailText.setBackgroundColor(ThemeManager.sectionBackground(activity))
-
+        detailText.setTextColor(Color.DKGRAY)
+        detailText.setBackgroundColor(Color.rgb(245, 247, 250))
         detailText.setPadding(24, 24, 24, 24)
 
         page.addView(title)
@@ -201,10 +179,7 @@ class InventoryReportPage(private val activity: Activity) {
         card.textSize = 18f
         card.setTextColor(color)
         card.gravity = Gravity.CENTER
-
-        // Changes summary card background based on Settings - AF
-        card.setBackgroundColor(ThemeManager.sectionBackground(activity))
-
+        card.setBackgroundColor(Color.rgb(245, 247, 250))
         card.setPadding(20, 24, 20, 24)
 
         val params = LinearLayout.LayoutParams(
