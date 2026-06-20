@@ -1,6 +1,7 @@
 package com.liquor.ledger
 
 // IMPORTS NEEDED FOR UI COMPONENTS
+import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.media.AudioManager
@@ -38,9 +39,16 @@ class SettingsPage(
     private val prefs = context.getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
 
     /*
+     * Activity reference
+     *
+     * ThemeManager needs an Activity so it can read the same saved settings.
+     */
+    private val activity = context as Activity
+
+    /*
      * Setting keys
      *
-     * These names must match the keys MainActivity reads.
+     * These names must match the keys MainActivity and other pages read.
      */
     private val KEY_COLORBLIND_MODE = "colorblind_mode"
     private val KEY_DARK_MODE = "dark_mode"
@@ -82,15 +90,8 @@ class SettingsPage(
         // CLEAR OLD SETTINGS VIEWS BEFORE REBUILDING
         layout.removeAllViews()
 
-        // READ SAVED THEME SETTINGS
-        val darkModeEnabled = prefs.getBoolean(KEY_DARK_MODE, false)
-
-        // APPLY SETTINGS PAGE BACKGROUND
-        if (darkModeEnabled) {
-            layout.setBackgroundColor(Color.rgb(30, 30, 30))
-        } else {
-            layout.setBackgroundColor(Color.WHITE)
-        }
+        // APPLY SETTINGS PAGE BACKGROUND FROM THEME MANAGER
+        layout.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         // ADD INNER PADDING
         layout.setPadding(dp(20), dp(20), dp(20), dp(20))
@@ -110,11 +111,9 @@ class SettingsPage(
         val testPrinterButton = Button(context)
         testPrinterButton.text = "Test Printer"
 
-        // COLORBLIND MODE USES A BLUE ACCENT
-        if (prefs.getBoolean(KEY_COLORBLIND_MODE, false)) {
-            testPrinterButton.setBackgroundColor(Color.rgb(0, 90, 150))
-            testPrinterButton.setTextColor(Color.WHITE)
-        }
+        // STYLE TEST PRINTER BUTTON USING THEME MANAGER
+        testPrinterButton.setBackgroundColor(ThemeManager.primaryAction(activity))
+        testPrinterButton.setTextColor(Color.WHITE)
 
         // SIMULATED TEST PRINTER FUNCTIONALITY
         testPrinterButton.setOnClickListener {
@@ -132,19 +131,14 @@ class SettingsPage(
      */
     private fun makeTitle(text: String): TextView {
 
-        val darkModeEnabled = prefs.getBoolean(KEY_DARK_MODE, false)
-
         val title = TextView(context)
         title.text = text
         title.textSize = 28f
         title.gravity = Gravity.START
         title.setPadding(0, 0, 0, dp(20))
 
-        if (darkModeEnabled) {
-            title.setTextColor(Color.WHITE)
-        } else {
-            title.setTextColor(Color.BLACK)
-        }
+        // APPLY TITLE COLOR FROM THEME MANAGER
+        title.setTextColor(ThemeManager.primaryText(activity))
 
         return title
     }
@@ -163,9 +157,6 @@ class SettingsPage(
         parentLayout: LinearLayout
     ): Switch {
 
-        val darkModeEnabled = prefs.getBoolean(KEY_DARK_MODE, false)
-        val colorblindModeEnabled = prefs.getBoolean(KEY_COLORBLIND_MODE, false)
-
         val settingSwitch = Switch(context)
 
         // SWITCH LABEL
@@ -175,14 +166,8 @@ class SettingsPage(
         settingSwitch.textSize = 18f
         settingSwitch.setPadding(0, dp(10), 0, dp(10))
 
-        // TEXT COLOR BASED ON SETTINGS
-        if (darkModeEnabled) {
-            settingSwitch.setTextColor(Color.WHITE)
-        } else if (colorblindModeEnabled) {
-            settingSwitch.setTextColor(Color.rgb(0, 90, 150))
-        } else {
-            settingSwitch.setTextColor(Color.DKGRAY)
-        }
+        // TEXT COLOR FROM THEME MANAGER
+        settingSwitch.setTextColor(ThemeManager.secondaryText(activity))
 
         // LOAD SAVED VALUE
         settingSwitch.isChecked = prefs.getBoolean(settingKey, false)
