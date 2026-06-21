@@ -37,6 +37,10 @@ class UserInfoPage(private val activity: Activity) {
     // Container for the employee list (manager view)
     private lateinit var employeeListContainer: LinearLayout
 
+    // Holds the full employee list so search can filter without refetching
+    private var allEmployeesCache: List<Pair<Employee, Map<String, Any>>> = emptyList()
+    private var currentSearch = ""
+
     fun build(): LinearLayout {
 
         val page = LinearLayout(activity)
@@ -76,6 +80,33 @@ class UserInfoPage(private val activity: Activity) {
 
             // ALL EMPLOYEES SECTION
             content.addView(makeSectionTitle("All Employees"))
+
+            // Search bar
+            val searchInput = EditText(activity)
+            searchInput.hint = "Search by name or Employee ID..."
+            searchInput.textSize = 14f
+            searchInput.setTextColor(Color.BLACK)
+            searchInput.setHintTextColor(Color.LTGRAY)
+            searchInput.setPadding(dp(12), dp(10), dp(12), dp(10))
+            searchInput.setBackgroundColor(Color.rgb(243, 244, 246))
+
+            val searchParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            searchParams.setMargins(0, 0, 0, dp(12))
+            searchInput.layoutParams = searchParams
+
+            searchInput.addTextChangedListener(object : android.text.TextWatcher {
+                override fun afterTextChanged(s: android.text.Editable?) {
+                    currentSearch = s.toString().trim()
+                    filterAndDisplayEmployees()
+                }
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            })
+
+            content.addView(searchInput, searchParams)
 
             employeeListContainer = LinearLayout(activity)
             employeeListContainer.orientation = LinearLayout.VERTICAL
@@ -118,29 +149,8 @@ class UserInfoPage(private val activity: Activity) {
                 }
 
                 withContext(Dispatchers.Main) {
-                    employeeListContainer.removeAllViews()
-
-                    if (employees.isEmpty()) {
-                        val emptyText = TextView(activity)
-                        emptyText.text = "No employees found"
-                        emptyText.textSize = 14f
-                        emptyText.setTextColor(Color.GRAY)
-                        employeeListContainer.addView(emptyText)
-                        return@withContext
-                    }
-
-                    employees.forEach { (employee, meta) ->
-                        employeeListContainer.addView(
-                            makeEmployeeRow(employee, meta))
-
-                        // Divider
-                        val divider = android.view.View(activity)
-                        divider.setBackgroundColor(Color.rgb(229, 231, 235))
-                        employeeListContainer.addView(
-                            divider,
-                            LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.MATCH_PARENT, 1))
-                    }
+                    allEmployeesCache = employees
+                    filterAndDisplayEmployees()
                 }
 
             } catch (e: Exception) {
@@ -153,6 +163,40 @@ class UserInfoPage(private val activity: Activity) {
                     employeeListContainer.addView(errorText)
                 }
             }
+        }
+    }
+
+    // Filters the cached employee list by the current search term and displays it
+    private fun filterAndDisplayEmployees() {
+        employeeListContainer.removeAllViews()
+
+        val filtered = if (currentSearch.isEmpty()) {
+            allEmployeesCache
+        } else {
+            allEmployeesCache.filter { (employee, _) ->
+                employee.name.contains(currentSearch, ignoreCase = true) ||
+                    employee.employeeId.contains(currentSearch, ignoreCase = true)
+            }
+        }
+
+        if (filtered.isEmpty()) {
+            val emptyText = TextView(activity)
+            emptyText.text = "No employees found"
+            emptyText.textSize = 14f
+            emptyText.setTextColor(Color.GRAY)
+            employeeListContainer.addView(emptyText)
+            return
+        }
+
+        filtered.forEach { (employee, meta) ->
+            employeeListContainer.addView(makeEmployeeRow(employee, meta))
+
+            val divider = android.view.View(activity)
+            divider.setBackgroundColor(Color.rgb(229, 231, 235))
+            employeeListContainer.addView(
+                divider,
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 1))
         }
     }
 
@@ -276,7 +320,14 @@ class UserInfoPage(private val activity: Activity) {
         if (isLocked) {
             val unlockBtn = makeSmallButton("Unlock", Color.rgb(245, 158, 11))
             unlockBtn.setOnClickListener {
-                unlockAccount(employee.docId)
+                AlertDialog.Builder(activity)
+                    .setTitle("Unlock ${employee.name}'s Account?")
+                    .setMessage("This will reset their failed login attempts and allow them to log in again.")
+                    .setPositiveButton("Unlock") { _, _ ->
+                        unlockAccount(employee.docId)
+                    }
+                    .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                    .show()
             }
             val unlockParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -351,7 +402,20 @@ class UserInfoPage(private val activity: Activity) {
                 return@setPositiveButton
             }
 
-            updateEmployee(employee.docId, newName, newId, newPosition)
+            if (newPosition != employee.position) {
+                AlertDialog.Builder(activity)
+                    .setTitle("Change Position?")
+                    .setMessage("${employee.name}'s position will change from " +
+                        "${employee.position} to $newPosition. This changes what " +
+                        "they can access in the app.")
+                    .setPositiveButton("Confirm") { _, _ ->
+                        updateEmployee(employee.docId, newName, newId, newPosition)
+                    }
+                    .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                    .show()
+            } else {
+                updateEmployee(employee.docId, newName, newId, newPosition)
+            }
         }
 
         builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
