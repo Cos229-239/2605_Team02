@@ -359,6 +359,17 @@ class MainActivity : Activity() {
                 )
             }
 
+        else if (pageName == "User Info") {
+            val userInfoPage = UserInfoPage(this)
+            contentBox.addView(
+                userInfoPage.build(),
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+
         else if (pageName == "Emergency Contacts") {
 
             val emergencyContactsPage = EmergencyContactsPage(this)

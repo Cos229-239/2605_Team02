@@ -348,9 +348,7 @@ class InventoryPage(private val activity: Activity) {
         )
 
         nameCell.setOnClickListener {
-            if (isManager) {
-                showProductDetailDialog(product)
-            }
+            if (isManager) showEditProductDialog(product)
         }
 
         row.addView(nameCell)
@@ -447,60 +445,80 @@ class InventoryPage(private val activity: Activity) {
     }
 
     // Shows a dialog with full product details and edit options
-    private fun showProductDetailDialog(product: Map<String, String>) {
+    // Shows a dialog allowing managers to edit an existing product's details
+    private fun showEditProductDialog(product: Map<String, String>) {
         val builder = AlertDialog.Builder(activity)
-        builder.setTitle(product["name"])
+        builder.setTitle("Edit Product")
 
-        val content = LinearLayout(activity)
-        content.orientation = LinearLayout.VERTICAL
-        content.setPadding(dp(20), dp(10), dp(20), dp(10))
+        val form = LinearLayout(activity)
+        form.orientation = LinearLayout.VERTICAL
+        form.setPadding(dp(20), dp(10), dp(20), dp(10))
 
-        val details = listOf(
-            "SKU" to (product["sku"] ?: "—"),
-            "Category" to (product["category"] ?: ""),
-            "Vendor" to (product["vendor"] ?: "—"),
-            "Stock" to (product["stock"] ?: "0"),
-            "Reorder Point" to (product["reorderPoint"] ?: "0"),
-            "Cost" to "$${product["cost"]}",
-            "Tax %" to "${product["taxPercent"]}%",
-            "Margin %" to "${product["marginPercent"]}%",
-            "Price" to "$${product["price"]}",
-            "Stock Value" to "$${"%.2f".format(product["stockValue"]?.toDoubleOrNull() ?: 0.0)}"
-        )
+        val nameInput = makeDialogInput(form, "Product Name", product["name"] ?: "")
+        val skuInput = makeDialogInput(form, "SKU", product["sku"]?.takeIf { it != "—" } ?: "")
+        val categoryInput = makeDialogInput(form, "Category", product["category"] ?: "")
+        val vendorInput = makeDialogInput(form, "Vendor", product["vendor"]?.takeIf { it != "—" } ?: "")
+        val reorderInput = makeDialogInput(form, "Reorder Point",
+            product["reorderPoint"] ?: "0", isNumber = true)
+        val costInput = makeDialogInput(form, "Cost ($)",
+            product["cost"] ?: "0.0", isDecimal = true)
+        val priceInput = makeDialogInput(form, "Price ($)",
+            product["price"] ?: "0.0", isDecimal = true)
+        val taxInput = makeDialogInput(form, "Tax %",
+            product["taxPercent"] ?: "0.0", isDecimal = true)
+        val marginInput = makeDialogInput(form, "Margin %",
+            product["marginPercent"] ?: "0.0", isDecimal = true)
 
-        details.forEach { (label, value) ->
-            val row = LinearLayout(activity)
-            row.orientation = LinearLayout.HORIZONTAL
-            row.setPadding(0, dp(4), 0, dp(4))
+        builder.setView(form)
 
-            val labelView = TextView(activity)
-            labelView.text = "$label:"
-            labelView.textSize = 14f
-            labelView.setTextColor(getMutedTextColor())
-            labelView.setTypeface(null, Typeface.BOLD)
-            labelView.layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
+        builder.setPositiveButton("Save Changes") { _, _ ->
+            val name = nameInput.text.toString().trim()
+            if (name.isEmpty()) {
+                android.widget.Toast.makeText(
+                    activity, "Product name is required",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                return@setPositiveButton
+            }
 
-            val valueView = TextView(activity)
-            valueView.text = value
-            valueView.textSize = 14f
-            valueView.setTextColor(getPrimaryTextColor())
-            valueView.layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val updates = mapOf(
+                        "name" to name,
+                        "sku" to skuInput.text.toString().trim(),
+                        "category" to categoryInput.text.toString().trim(),
+                        "vendor" to vendorInput.text.toString().trim(),
+                        "reorderPoint" to (reorderInput.text.toString().toLongOrNull() ?: 0L),
+                        "cost" to (costInput.text.toString().toDoubleOrNull() ?: 0.0),
+                        "price" to (priceInput.text.toString().toDoubleOrNull() ?: 0.0),
+                        "taxPercent" to (taxInput.text.toString().toDoubleOrNull() ?: 0.0),
+                        "marginPercent" to (marginInput.text.toString().toDoubleOrNull() ?: 0.0)
+                    )
 
-            row.addView(labelView)
-            row.addView(valueView)
-            content.addView(row)
+                    db.collection("products")
+                        .document(product["docId"] ?: "")
+                        .update(updates)
+                        .await()
+
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(
+                            activity, "$name updated successfully",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                        loadProducts()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(
+                            activity, "Error: ${e.message}",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
         }
 
-        builder.setView(content)
-        builder.setPositiveButton("Close") { dialog, _ -> dialog.dismiss() }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
         builder.show()
     }
 
@@ -584,6 +602,7 @@ class InventoryPage(private val activity: Activity) {
     }
 
     // Shows dialog to adjust stock for a product
+    // Shows dialog to adjust stock for a product using a dropdown
     private fun showAdjustStockDialog() {
         val builder = AlertDialog.Builder(activity)
         builder.setTitle("Adjust Stock")
@@ -592,85 +611,154 @@ class InventoryPage(private val activity: Activity) {
         form.orientation = LinearLayout.VERTICAL
         form.setPadding(dp(20), dp(10), dp(20), dp(10))
 
-        val productNameInput = makeDialogInput(form, "Product Name")
-        val adjustAmountInput = makeDialogInput(form, "Adjust Amount (+ or -)", isNumber = false)
+        val productLabel = makeFormLabelForDialog("Select Product")
+        val productSpinner = android.widget.Spinner(activity)
+
+        val spinnerParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        spinnerParams.setMargins(0, 0, 0, dp(8))
+        productSpinner.layoutParams = spinnerParams
+
+        val adjustLabel = makeFormLabelForDialog("Adjust Amount (+ or -)")
+        val adjustAmountInput = EditText(activity)
+        adjustAmountInput.hint = "e.g. 10 or -5"
+        adjustAmountInput.textSize = 14f
+        adjustAmountInput.setTextColor(Color.BLACK)
+        adjustAmountInput.setHintTextColor(Color.LTGRAY)
+        adjustAmountInput.setPadding(dp(8), dp(8), dp(8), dp(8))
+        adjustAmountInput.setBackgroundColor(Color.rgb(243, 244, 246))
+        adjustAmountInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+            android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
 
         val noteText = TextView(activity)
-        noteText.text = "Enter a positive number to add stock or negative to remove.\ne.g. 10 or -5"
+        noteText.text = "Enter a positive number to add stock or negative to remove."
         noteText.textSize = 12f
-        noteText.setTextColor(getMutedTextColor())
+        noteText.setTextColor(Color.GRAY)
         noteText.setPadding(0, dp(4), 0, dp(8))
+
+        form.addView(productLabel)
+        form.addView(productSpinner, spinnerParams)
+        form.addView(adjustLabel)
+        form.addView(adjustAmountInput)
         form.addView(noteText)
 
         builder.setView(form)
 
-        builder.setPositiveButton("Adjust") { _, _ ->
-            val productName = productNameInput.text.toString().trim()
-            val adjustAmount = adjustAmountInput.text.toString().trim().toIntOrNull()
+        builder.setPositiveButton("Adjust", null)
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
 
-            if (productName.isEmpty() || adjustAmount == null) {
-                android.widget.Toast.makeText(
-                    activity,
-                    "Please enter a valid product name and amount",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+        val dialog = builder.create()
 
-                return@setPositiveButton
-            }
+        // Load products into the spinner
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val snapshot = db.collection("products").get().await()
+                val products = snapshot.documents.mapNotNull { doc ->
+                    val name = doc.getString("name") ?: ""
+                    val currentStock = doc.getLong("stock") ?: 0L
+                    if (name.isNotEmpty()) Pair(name, currentStock) else null
+                }
 
-            // Find the product and update its stock
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val snapshot = db.collection("products")
-                        .whereEqualTo("name", productName)
-                        .get()
-                        .await()
+                withContext(Dispatchers.Main) {
+                    val productNames = products.map { "${it.first} (current: ${it.second})" }
+                    val adapter = android.widget.ArrayAdapter(
+                        activity,
+                        android.R.layout.simple_spinner_item,
+                        productNames
+                    )
+                    adapter.setDropDownViewResource(
+                        android.R.layout.simple_spinner_dropdown_item)
+                    productSpinner.adapter = adapter
 
-                    if (snapshot.isEmpty) {
-                        withContext(Dispatchers.Main) {
+                    dialog.show()
+
+                    // Override positive button so dialog doesn't auto-close on error
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                        val selectedIndex = productSpinner.selectedItemPosition
+                        if (selectedIndex < 0 || products.isEmpty()) {
                             android.widget.Toast.makeText(
-                                activity,
-                                "Product not found",
+                                activity, "Please select a product",
                                 android.widget.Toast.LENGTH_SHORT
                             ).show()
+                            return@setOnClickListener
                         }
 
-                        return@launch
+                        val selectedProductName = products[selectedIndex].first
+                        val adjustAmount = adjustAmountInput.text.toString()
+                            .trim().toIntOrNull()
+
+                        if (adjustAmount == null) {
+                            android.widget.Toast.makeText(
+                                activity, "Please enter a valid amount",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                            return@setOnClickListener
+                        }
+
+                        adjustProductStock(selectedProductName, adjustAmount)
+                        dialog.dismiss()
                     }
-
-                    val doc = snapshot.documents[0]
-                    val currentStock = doc.getLong("stock") ?: 0L
-                    val newStock = maxOf(0L, currentStock + adjustAmount)
-
-                    db.collection("products")
-                        .document(doc.id)
-                        .update("stock", newStock)
-                        .await()
-
-                    withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(
-                            activity,
-                            "Stock updated: $currentStock → $newStock",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-
-                        loadProducts()
-                    }
-
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(
-                            activity,
-                            "Error: ${e.message}",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        activity, "Error loading products: ${e.message}",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    dialog.dismiss()
                 }
             }
         }
+    }
 
-        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-        builder.show()
+    // Performs the actual stock adjustment in Firestore
+    private fun adjustProductStock(productName: String, adjustAmount: Int) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val snapshot = db.collection("products")
+                    .whereEqualTo("name", productName)
+                    .get()
+                    .await()
+
+                if (snapshot.isEmpty) {
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(
+                            activity, "Product not found",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    return@launch
+                }
+
+                val doc = snapshot.documents[0]
+                val currentStock = doc.getLong("stock") ?: 0L
+                val newStock = maxOf(0L, currentStock + adjustAmount)
+
+                db.collection("products")
+                    .document(doc.id)
+                    .update("stock", newStock)
+                    .await()
+
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        activity,
+                        "Stock updated: $currentStock -> $newStock",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    loadProducts()
+                }
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        activity, "Error: ${e.message}",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
     }
 
     // Creates a table header row
@@ -735,7 +823,8 @@ class InventoryPage(private val activity: Activity) {
         view.setTextColor(color)
         view.gravity = Gravity.CENTER
         view.setPadding(dp(8), dp(8), dp(8), dp(8))
-        view.layoutParams = LinearLayout.LayoutParams(
+        view.
+        layoutParams = LinearLayout.LayoutParams(
             0,
             LinearLayout.LayoutParams.WRAP_CONTENT,
             1f
@@ -769,6 +858,7 @@ class InventoryPage(private val activity: Activity) {
     private fun makeDialogInput(
         parent: LinearLayout,
         hint: String,
+        defaultValue: String = "",
         isNumber: Boolean = false,
         isDecimal: Boolean = false
     ): EditText {
@@ -781,19 +871,17 @@ class InventoryPage(private val activity: Activity) {
 
         val input = EditText(activity)
         input.hint = hint
+        if (defaultValue.isNotEmpty()) input.setText(defaultValue)
         input.textSize = 14f
         input.setTextColor(getPrimaryTextColor())
         input.setHintTextColor(getMutedTextColor())
         input.setPadding(dp(8), dp(8), dp(8), dp(8))
         input.setBackgroundColor(getInputBackgroundColor())
-
         input.inputType = when {
             isDecimal -> android.text.InputType.TYPE_CLASS_NUMBER or
-                    android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-
+                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
             isNumber -> android.text.InputType.TYPE_CLASS_NUMBER or
-                    android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
-
+                android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
             else -> android.text.InputType.TYPE_CLASS_TEXT
         }
 
@@ -801,12 +889,20 @@ class InventoryPage(private val activity: Activity) {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-
         params.setMargins(0, 0, 0, dp(4))
         input.layoutParams = params
         parent.addView(input)
 
         return input
+    }
+
+    private fun makeFormLabelForDialog(text: String): TextView {
+        val label = TextView(activity)
+        label.text = text
+        label.textSize = 13f
+        label.setTextColor(Color.GRAY)
+        label.setPadding(0, dp(8), 0, dp(2))
+        return label
     }
 
     private fun isDarkModeEnabled(): Boolean {

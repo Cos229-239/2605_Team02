@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
+import android.app.AlertDialog
 import com.google.firebase.firestore.FirebaseFirestore
 import com.liquor.ledger.firebase.FirebaseManager
 import kotlinx.coroutines.CoroutineScope
@@ -87,43 +88,25 @@ class PurchaseOrdersPage(private val activity: Activity) {
         // Filter buttons
         val filters = listOf("All", "pending review", "submitted", "received")
 
-        filters.forEach { filter ->
-            val filterBtn = makeFilterButton(filter)
-
-            if (filter == currentFilter) {
-                filterBtn.setBackgroundColor(getPrimaryActionColor())
-                filterBtn.setTextColor(Color.WHITE)
-            }
-
-            filterBtn.setOnClickListener {
-                currentFilter = filter
-                loadPurchaseOrders()
-
-                topBar.removeAllViews()
-
-                filters.forEach { f ->
-                    val btn = makeFilterButton(f)
-
-                    btn.setOnClickListener {
-                        currentFilter = f
-                        loadPurchaseOrders()
-                    }
-
-                    if (f == currentFilter) {
-                        btn.setBackgroundColor(getPrimaryActionColor())
-                        btn.setTextColor(Color.WHITE)
-                    }
-
-                    topBar.addView(btn)
+        fun refreshFilterBar() {
+            topBar.removeAllViews()
+            filters.forEach { f ->
+                val btn = makeFilterButton(f)
+                if (f == currentFilter) {
+                    btn.setBackgroundColor(getPrimaryActionColor())
+                    btn.setTextColor(Color.WHITE)
                 }
-
-                topBar.addView(makeNewOrderButton())
+                btn.setOnClickListener {
+                    currentFilter = f
+                    loadPurchaseOrders()
+                    refreshFilterBar()
+                }
+                topBar.addView(btn)
             }
-
-            topBar.addView(filterBtn)
+            topBar.addView(makeNewOrderButton())
         }
 
-        topBar.addView(makeNewOrderButton())
+        refreshFilterBar()
 
         // TABLE HEADER ROW
         val headerRow = makeTableHeader()
@@ -519,20 +502,28 @@ class PurchaseOrdersPage(private val activity: Activity) {
                             detailPanel.addView(
                                 makeActionButton(
                                     "Submit Order",
-                                    getPrimaryActionColor()
+                                    Color.rgb(45, 95, 255)
                                 ) {
                                     updatePOStatus(order["docId"] ?: "", "submitted")
                                 }
                             )
-                        }
+                        detailPanel.addView(
+                            makeActionButton(
+                                "Delete Order",
+                                Color.rgb(239, 68, 68)
+                            ) {
+                                confirmDeletePO(order["docId"] ?: "", order["poNumber"] ?: "")
+                            }
+                        )
+                    }
 
                         "submitted" -> {
                             detailPanel.addView(
                                 makeActionButton(
-                                    "Mark as Received",
+                                    "Review & Receive Order",
                                     getPositiveColor()
                                 ) {
-                                    receivePO(order["docId"] ?: "", items)
+                                    showReceivingChecklist(order["docId"] ?: "", items)
                                 }
                             )
                         }
@@ -561,15 +552,221 @@ class PurchaseOrdersPage(private val activity: Activity) {
         }
     }
 
+    // Shows a confirmation dialog before deleting a PO
+    private fun confirmDeletePO(docId: String, poNumber: String) {
+        AlertDialog.Builder(activity)
+            .setTitle("Delete $poNumber?")
+            .setMessage("This cannot be undone.")
+            .setPositiveButton("Delete") { _, _ ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        db.collection("purchaseOrders")
+                            .document(docId)
+                            .delete()
+                            .await()
+
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                activity, "$poNumber deleted",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                            detailPanel.removeAllViews()
+                            val selectText = TextView(activity)
+                            selectText.text = "Select an order to view details"
+                            selectText.textSize = 16f
+                            selectText.setTextColor(Color.GRAY)
+                            selectText.gravity = Gravity.CENTER
+                            detailPanel.addView(selectText)
+                            loadPurchaseOrders()
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                activity, "Error deleting: ${e.message}",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
     // Marks PO as received and updates inventory stock for each item
-    private fun receivePO(docId: String, items: List<Map<String, Any>>) {
+    // Shows a checklist to verify what was actually received
+// Manager can mark each item as received in full, partially, or not at all
+    private fun showReceivingChecklist(
+        docId: String,
+        items: List<Map<String, Any>>
+    ) {
+        detailPanel.removeAllViews()
+
+        val scrollView = ScrollView(activity)
+        val container = LinearLayout(activity)
+        container.orientation = LinearLayout.VERTICAL
+
+        val title = TextView(activity)
+        title.text = "Receiving Checklist"
+        title.textSize = 20f
+        title.setTextColor(Color.BLACK)
+        title.setTypeface(null, Typeface.BOLD)
+        title.setPadding(0, 0, 0, dp(4))
+
+        val subtitle = TextView(activity)
+        subtitle.text = "Confirm quantity actually received for each item"
+        subtitle.textSize = 13f
+        subtitle.setTextColor(Color.GRAY)
+        subtitle.setPadding(0, 0, 0, dp(16))
+
+        container.addView(title)
+        container.addView(subtitle)
+
+        // One input field per item, defaulted to the ordered quantity
+        // receivedInputs maps index -> the EditText so we can read values later
+        val receivedInputs = mutableListOf<android.widget.EditText>()
+
+        items.forEachIndexed { index, item ->
+            val productName = item["productName"] as? String ?: ""
+            val orderedQty = (item["quantity"] as? Long)?.toInt() ?: 0
+
+            val itemBlock = LinearLayout(activity)
+            itemBlock.orientation = LinearLayout.VERTICAL
+            itemBlock.setBackgroundColor(Color.rgb(248, 249, 250))
+            itemBlock.setPadding(dp(12), dp(12), dp(12), dp(12))
+
+            val itemBlockParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            itemBlockParams.setMargins(0, 0, 0, dp(8))
+            itemBlock.layoutParams = itemBlockParams
+
+            val nameText = TextView(activity)
+            nameText.text = productName
+            nameText.textSize = 14f
+            nameText.setTextColor(Color.BLACK)
+            nameText.setTypeface(null, Typeface.BOLD)
+
+            val orderedText = TextView(activity)
+            orderedText.text = "Ordered: $orderedQty"
+            orderedText.textSize = 12f
+            orderedText.setTextColor(Color.GRAY)
+            orderedText.setPadding(0, dp(2), 0, dp(6))
+
+            val receivedLabel = TextView(activity)
+            receivedLabel.text = "Quantity Received"
+            receivedLabel.textSize = 12f
+            receivedLabel.setTextColor(Color.rgb(55, 65, 81))
+
+            val receivedInput = android.widget.EditText(activity)
+            receivedInput.setText(orderedQty.toString())
+            receivedInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            receivedInput.textSize = 14f
+            receivedInput.setTextColor(Color.BLACK)
+            receivedInput.setPadding(dp(8), dp(8), dp(8), dp(8))
+            receivedInput.setBackgroundColor(Color.WHITE)
+
+            receivedInputs.add(receivedInput)
+
+            itemBlock.addView(nameText)
+            itemBlock.addView(orderedText)
+            itemBlock.addView(receivedLabel)
+            itemBlock.addView(receivedInput)
+
+            container.addView(itemBlock)
+        }
+
+        // Not Received button — marks everything as zero received, PO stays submitted
+        val notReceivedBtn = makeActionButton(
+            "Mark Order as Not Received",
+            Color.rgb(239, 68, 68)
+        ) {
+            AlertDialog.Builder(activity)
+                .setTitle("Mark as Not Received?")
+                .setMessage("This order will remain in 'submitted' status and no inventory will be updated.")
+                .setPositiveButton("Confirm") { _, _ ->
+                    android.widget.Toast.makeText(
+                        activity,
+                        "Order remains submitted. No inventory changes made.",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    showDetailPanel(
+                        mapOf(
+                            "docId" to docId,
+                            "poNumber" to "",
+                            "vendor" to "",
+                            "date" to "",
+                            "total" to "0.0",
+                            "status" to "submitted",
+                            "notes" to ""
+                        )
+                    )
+                }
+                .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                .show()
+        }
+
+        // Confirm Receipt button — updates inventory based on what was actually entered
+        val confirmBtn = makeActionButton(
+            "Confirm Receipt & Update Inventory",
+            Color.rgb(34, 197, 94)
+        ) {
+            val receivedItems = items.mapIndexed { index, item ->
+                val productName = item["productName"] as? String ?: ""
+                val orderedQty = (item["quantity"] as? Long)?.toInt() ?: 0
+                val receivedQty = receivedInputs[index].text.toString()
+                    .toIntOrNull() ?: 0
+                Triple(productName, orderedQty, receivedQty.coerceIn(0, Int.MAX_VALUE))
+            }
+
+            // Check if this is a partial receipt
+            val isPartial = receivedItems.any { (_, ordered, received) ->
+                received != ordered
+            }
+
+            if (isPartial) {
+                AlertDialog.Builder(activity)
+                    .setTitle("Partial Receipt Detected")
+                    .setMessage("Some quantities don't match what was ordered. Inventory will be updated based on what you entered, and the order will be marked received.")
+                    .setPositiveButton("Confirm") { _, _ ->
+                        finalizeReceiving(docId, receivedItems)
+                    }
+                    .setNegativeButton("Go Back") { dialog, _ -> dialog.dismiss() }
+                    .show()
+            } else {
+                finalizeReceiving(docId, receivedItems)
+            }
+        }
+
+        container.addView(confirmBtn)
+        container.addView(notReceivedBtn)
+
+        val cancelBtn = makeActionButton(
+            "Cancel",
+            Color.rgb(107, 114, 128)
+        ) {
+            // Just reload the detail panel without changes
+            CoroutineScope(Dispatchers.IO).launch {
+                loadPurchaseOrders()
+            }
+        }
+        container.addView(cancelBtn)
+
+        scrollView.addView(container)
+        detailPanel.addView(scrollView)
+    }
+
+    // Applies the received quantities to inventory and marks the PO as received
+    private fun finalizeReceiving(
+        docId: String,
+        receivedItems: List<Triple<String, Int, Int>>
+    ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                items.forEach { item ->
-                    val productName = item["productName"] as? String ?: ""
-                    val quantity = (item["quantity"] as? Long)?.toInt() ?: 0
-
-                    if (productName.isNotEmpty() && quantity > 0) {
+                // Update stock for each item based on quantity actually received
+                receivedItems.forEach { (productName, _, receivedQty) ->
+                    if (productName.isNotEmpty() && receivedQty > 0) {
                         val productSnapshot = db.collection("products")
                             .whereEqualTo("name", productName)
                             .get()
@@ -578,7 +775,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
                         if (!productSnapshot.isEmpty) {
                             val productDoc = productSnapshot.documents[0]
                             val currentStock = productDoc.getLong("stock") ?: 0L
-                            val newStock = currentStock + quantity
+                            val newStock = currentStock + receivedQty
 
                             db.collection("products")
                                 .document(productDoc.id)
@@ -588,21 +785,33 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     }
                 }
 
+                // Build a summary of what was received vs ordered to store on the PO
+                val receivedSummary = receivedItems.map { (name, ordered, received) ->
+                    hashMapOf(
+                        "productName" to name,
+                        "orderedQuantity" to ordered.toLong(),
+                        "receivedQuantity" to received.toLong()
+                    )
+                }
+
                 db.collection("purchaseOrders")
                     .document(docId)
-                    .update("status", "received")
+                    .update(
+                        mapOf(
+                            "status" to "received",
+                            "receivedItems" to receivedSummary
+                        )
+                    )
                     .await()
 
                 withContext(Dispatchers.Main) {
                     loadPurchaseOrders()
                     detailPanel.removeAllViews()
-
                     val successText = TextView(activity)
                     successText.text = "Order received and inventory updated"
                     successText.textSize = 16f
-                    successText.setTextColor(getPositiveColor())
+                    successText.setTextColor(Color.rgb(34, 197, 94))
                     successText.setPadding(0, dp(20), 0, 0)
-
                     detailPanel.addView(successText)
                 }
 
@@ -611,8 +820,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error receiving order: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(getNegativeColor())
-
+                    errorText.setTextColor(Color.RED)
                     detailPanel.addView(errorText)
                 }
             }

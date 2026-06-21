@@ -141,7 +141,7 @@ class LoginActivity : Activity() {
         passwordLabel.setPadding(0, 0, 0, dp(6))
 
         // Password input field
-        // Hides the password characters as dots
+        // Hides the password characters as dots by default
         passwordInput = EditText(this)
         passwordInput.hint = "Enter your password"
         passwordInput.inputType = 129
@@ -151,25 +151,61 @@ class LoginActivity : Activity() {
         passwordInput.setPadding(dp(12), dp(12), dp(12), dp(12))
         passwordInput.setBackgroundColor(Color.rgb(243, 244, 246))
 
+        val passwordFieldParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        // Show/Hide toggle button next to the password field
+        var passwordVisible = false
+        val togglePasswordBtn = TextView(this)
+        togglePasswordBtn.text = "Show"
+        togglePasswordBtn.textSize = 13f
+        togglePasswordBtn.setTextColor(Color.rgb(45, 95, 255))
+        togglePasswordBtn.gravity = Gravity.CENTER
+        togglePasswordBtn.setPadding(dp(12), 0, dp(4), 0)
+        togglePasswordBtn.setOnClickListener {
+            passwordVisible = !passwordVisible
+            if (passwordVisible) {
+                passwordInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                togglePasswordBtn.text = "Hide"
+            } else {
+                passwordInput.inputType = 129
+                togglePasswordBtn.text = "Show"
+            }
+            // Keep cursor at the end after switching input type
+            passwordInput.setSelection(passwordInput.text.length)
+        }
+
+        // Row containing the password field and the toggle button
+        val passwordRow = LinearLayout(this)
+        passwordRow.orientation = LinearLayout.HORIZONTAL
+        passwordRow.gravity = Gravity.CENTER_VERTICAL
+        passwordRow.setBackgroundColor(Color.rgb(243, 244, 246))
+
         val passwordParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
         passwordParams.setMargins(0, 0, 0, dp(8))
 
-        // Error message hidden until there is an error
+        // Error message box hidden until there is an error
+        // Styled as a light red background box instead of plain text
         errorText = TextView(this)
         errorText.text = ""
         errorText.textSize = 13f
-        errorText.setTextColor(Color.rgb(239, 68, 68))
+        errorText.setTextColor(Color.rgb(185, 28, 28))
+        errorText.setBackgroundColor(Color.rgb(254, 226, 226))
+        errorText.setPadding(dp(12), dp(10), dp(12), dp(10))
         errorText.visibility = View.GONE
 
         val errorParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        errorParams.setMargins(0, 0, 0, dp(16))
-
+        errorParams.setMargins(0, dp(4), 0, dp(16))
         // Loading spinner hidden until login is in progress
         progressBar = ProgressBar(this)
         progressBar.visibility = View.GONE
@@ -194,6 +230,18 @@ class LoginActivity : Activity() {
         )
         buttonParams.setMargins(0, dp(8), 0, 0)
 
+        // Make the password field show "Done" on the keyboard
+        // and trigger login when pressed
+        passwordInput.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+        passwordInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                attemptLogin()
+                true
+            } else {
+                false
+            }
+        }
+
         // Button click attempt login
         loginButton.setOnClickListener {
             attemptLogin()
@@ -205,7 +253,10 @@ class LoginActivity : Activity() {
         card.addView(idLabel)
         card.addView(employeeIdInput, inputParams)
         card.addView(passwordLabel)
-        card.addView(passwordInput, passwordParams)
+        passwordInput.setBackgroundColor(Color.TRANSPARENT)
+        passwordRow.addView(passwordInput, passwordFieldParams)
+        passwordRow.addView(togglePasswordBtn)
+        card.addView(passwordRow, passwordParams)
         card.addView(errorText, errorParams)
         card.addView(progressBar, progressParams)
         card.addView(loginButton, buttonParams)
