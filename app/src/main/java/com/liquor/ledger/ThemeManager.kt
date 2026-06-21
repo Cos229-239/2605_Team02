@@ -96,4 +96,49 @@ object ThemeManager {
             Color.rgb(45, 95, 255)
         }
     }
+
+    // SUCCESS COLOR USED FOR POSITIVE/ACTION STATUS COLORS
+    fun positive(activity: Activity): Int {
+        return if (isColorblindMode(activity)) {
+            Color.rgb(0, 114, 178)
+        } else {
+            Color.rgb(34, 197, 94)
+        }
+    }
+
+    // WARNING COLOR USED FOR HOTLINE OR LOW-STOCK STYLE COLORS
+    fun warning(activity: Activity): Int {
+        return if (isColorblindMode(activity)) {
+            Color.rgb(230, 159, 0)
+        } else {
+            Color.rgb(202, 138, 4)
+        }
+    }
+
+    // ERROR OR EMERGENCY COLOR
+    fun negative(activity: Activity): Int {
+        return if (isColorblindMode(activity)) {
+            Color.rgb(213, 94, 0)
+        } else {
+            Color.rgb(220, 38, 38)
+        }
+    }
+
+    // CARD BACKGROUND COLOR USED FOR INNER CARDS
+    fun cardBackground(activity: Activity): Int {
+        return if (isDarkMode(activity)) {
+            Color.rgb(60, 60, 60)
+        } else {
+            Color.rgb(250, 250, 250)
+        }
+    }
+
+    // EMERGENCY PROTOCOL BOX BACKGROUND
+    fun emergencyBackground(activity: Activity): Int {
+        return if (isDarkMode(activity)) {
+            Color.rgb(65, 45, 45)
+        } else {
+            Color.rgb(255, 248, 248)
+        }
+    }
 }

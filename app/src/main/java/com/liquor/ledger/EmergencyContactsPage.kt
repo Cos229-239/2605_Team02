@@ -13,20 +13,31 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         val scrollView = ScrollView(activity)
 
+        // Added so the scroll area matches Light or Dark Mode. Theme Manager - AF
+        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
         root.setPadding(20, 20, 20, 20)
+
+        // Main BG Color based on theme selection - AF
+        root.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val title = TextView(activity)
         title.text = "Emergency Contacts"
         title.textSize = 28f
         title.setTypeface(null, Typeface.BOLD)
-        title.setTextColor(Color.BLACK)
+
+        // Changes Primary text color based on Settings - AF
+        title.setTextColor(ThemeManager.primaryText(activity))
 
         val subtitle = TextView(activity)
         subtitle.text = "Important phone numbers for emergencies and support"
         subtitle.textSize = 14f
-        subtitle.setTextColor(Color.DKGRAY)
+
+        // Changes subtitle text color based on Settings - AF
+        subtitle.setTextColor(ThemeManager.secondaryText(activity))
+
         subtitle.setPadding(0, 10, 0, 30)
 
         root.addView(title)
@@ -108,19 +119,24 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         protocolParams.topMargin = 25
 
-        protocolBox.setBackgroundColor(Color.rgb(255, 248, 248))
+        // Changes protocol box background based on settings - AF
+        protocolBox.setBackgroundColor(ThemeManager.emergencyBackground(activity))
 
         val protocolTitle = TextView(activity)
         protocolTitle.text = "⚠ EMERGENCY PROTOCOL"
         protocolTitle.textSize = 14f
         protocolTitle.setTypeface(null, Typeface.BOLD)
-        protocolTitle.setTextColor(Color.rgb(220, 38, 38))
+
+        // Changes emergency title color based on settings - AF
+        protocolTitle.setTextColor(ThemeManager.negative(activity))
 
         val protocolText = TextView(activity)
         protocolText.text =
             "For life-threatening emergencies, always dial 911 first. Then contact store management and follow emergency procedures posted in the break room."
         protocolText.textSize = 13f
-        protocolText.setTextColor(Color.DKGRAY)
+
+        // Changes protocol message color based on Settings - AF
+        protocolText.setTextColor(ThemeManager.secondaryText(activity))
 
         protocolBox.addView(protocolTitle)
         protocolBox.addView(protocolText)
@@ -149,12 +165,17 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         params.marginEnd = 12
 
-        section.setBackgroundColor(Color.WHITE)
+        // Changes section BG color based on Settings - AF
+        section.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         val sectionTitle = TextView(activity)
         sectionTitle.text = title
         sectionTitle.textSize = 18f
         sectionTitle.setTypeface(null, Typeface.BOLD)
+
+        // Changes section title color based on settings - AF
+        sectionTitle.setTextColor(ThemeManager.primaryText(activity))
+
         sectionTitle.setPadding(0, 0, 0, 15)
 
         section.addView(sectionTitle)
@@ -190,7 +211,8 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         params.bottomMargin = 15
 
-        card.setBackgroundColor(Color.rgb(250, 250, 250))
+        // Changes contact card background based on Settings - AF
+        card.setBackgroundColor(ThemeManager.cardBackground(activity))
 
         val topRow = LinearLayout(activity)
         topRow.orientation = LinearLayout.HORIZONTAL
@@ -198,18 +220,19 @@ class EmergencyContactsPage(private val activity: Activity) {
         val nameView = TextView(activity)
         nameView.text = name
         nameView.textSize = 14f
-        nameView.setTextColor(Color.DKGRAY)
+        nameView.setTextColor(ThemeManager.secondaryText(activity))
 
         val badge = TextView(activity)
         badge.text = type
         badge.textSize = 10f
         badge.setPadding(12, 4, 12, 4)
 
+        // Changes badge colors based on Settings - AF
         when (type) {
-            "EMERGENCY" -> badge.setTextColor(Color.rgb(220, 38, 38))
-            "HOTLINE" -> badge.setTextColor(Color.rgb(202, 138, 4))
-            "SERVICE" -> badge.setTextColor(Color.GRAY)
-            else -> badge.setTextColor(Color.rgb(37, 99, 235))
+            "EMERGENCY" -> badge.setTextColor(ThemeManager.negative(activity))
+            "HOTLINE" -> badge.setTextColor(ThemeManager.warning(activity))
+            "SERVICE" -> badge.setTextColor(ThemeManager.mutedText(activity))
+            else -> badge.setTextColor(ThemeManager.primaryAction(activity))
         }
 
         val spacer = TextView(activity)
@@ -224,7 +247,10 @@ class EmergencyContactsPage(private val activity: Activity) {
         phoneView.text = phone
         phoneView.textSize = 18f
         phoneView.setTypeface(null, Typeface.BOLD)
-        phoneView.setTextColor(Color.rgb(59, 130, 246))
+
+        // Changes phone text color based on settings - AF
+        phoneView.setTextColor(ThemeManager.primaryAction(activity))
+
         phoneView.setPadding(0, 10, 0, 0)
 
         card.addView(topRow)
