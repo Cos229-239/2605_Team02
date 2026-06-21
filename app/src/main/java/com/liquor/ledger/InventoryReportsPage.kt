@@ -9,6 +9,8 @@ import android.widget.TextView
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.liquor.ledger.firebase.FirebaseManager
+import android.view.Gravity
+import android.widget.ScrollView
 
 
 class InventoryReportPage(private val activity: Activity) {
@@ -18,43 +20,92 @@ class InventoryReportPage(private val activity: Activity) {
     private var inventoryListener: ListenerRegistration? = null
 
 
-    private lateinit var summary: TextView
+    private lateinit var totalProductsCard: TextView
+    private lateinit var lowStockCard: TextView
+    private lateinit var outOfStockCard: TextView
+    private lateinit var inventoryValueCard: TextView
 
 
     fun build(): LinearLayout {
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
         root.setBackgroundColor(Color.WHITE)
-        root.setPadding(40, 40, 40, 40)
 
+        val scrollView = ScrollView(activity)
+
+        val page = LinearLayout(activity)
+        page.orientation = LinearLayout.VERTICAL
+        page.setBackgroundColor(Color.WHITE)
+        page.setPadding(40, 40, 40, 40)
 
         val title = TextView(activity)
         title.text = "Inventory Report"
         title.textSize = 28f
         title.setTypeface(null, Typeface.BOLD)
         title.setTextColor(Color.BLACK)
-        title.setPadding(0, 0, 0, 30)
 
+        val subtitle = TextView(activity)
+        subtitle.text = "Summary of product count, stock status, and total inventory value."
+        subtitle.textSize = 16f
+        subtitle.setTextColor(Color.DKGRAY)
+        subtitle.setPadding(0, 10, 0, 30)
 
-        summary = TextView(activity)
-        summary.text = "Loading inventory report..."
-        summary.textSize = 20f
-        summary.setTextColor(Color.BLACK)
-        summary.setPadding(20, 20, 20, 20)
+        val summaryRow1 = LinearLayout(activity)
+        summaryRow1.orientation = LinearLayout.HORIZONTAL
 
+        val summaryRow2 = LinearLayout(activity)
+        summaryRow2.orientation = LinearLayout.HORIZONTAL
+        summaryRow2.setPadding(0, 16, 0, 24)
 
-        root.addView(title)
-        root.addView(summary)
+        totalProductsCard = makeSummaryCard("Total Products", "0", Color.rgb(45, 95, 255))
+        lowStockCard = makeSummaryCard("Low Stock", "0", Color.rgb(230, 149, 62))
+        outOfStockCard = makeSummaryCard("Out of Stock", "0", Color.RED)
+        inventoryValueCard = makeSummaryCard("Inventory Value", "$0.00", Color.rgb(20, 180, 120))
 
+        summaryRow1.addView(totalProductsCard)
+        summaryRow1.addView(lowStockCard)
 
-        loadInventoryReport()
+        summaryRow2.addView(outOfStockCard)
+        summaryRow2.addView(inventoryValueCard)
 
+        val detailTitle = TextView(activity)
+        detailTitle.text = "Inventory Overview"
+        detailTitle.textSize = 20f
+        detailTitle.setTypeface(null, Typeface.BOLD)
+        detailTitle.setTextColor(Color.BLACK)
+        detailTitle.setPadding(0, 10, 0, 12)
+
+        val detailText = TextView(activity)
+        detailText.text = "Loading inventory report..."
+        detailText.textSize = 16f
+        detailText.setTextColor(Color.DKGRAY)
+        detailText.setBackgroundColor(Color.rgb(245, 247, 250))
+        detailText.setPadding(24, 24, 24, 24)
+
+        page.addView(title)
+        page.addView(subtitle)
+        page.addView(summaryRow1)
+        page.addView(summaryRow2)
+        page.addView(detailTitle)
+        page.addView(detailText)
+
+        scrollView.addView(page)
+
+        root.addView(
+            scrollView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        loadInventoryReport(detailText)
 
         return root
     }
 
 
-    private fun loadInventoryReport() {
+    private fun loadInventoryReport(detailText: TextView) {
         inventoryListener?.remove()
 
 
@@ -63,18 +114,18 @@ class InventoryReportPage(private val activity: Activity) {
 
 
                 if (error != null) {
-                    summary.text = "Error loading inventory report: ${error.message}"
+                    detailText.text = "Error loading inventory report: ${error.message}"
                     return@addSnapshotListener
                 }
 
 
                 if (snapshot == null || snapshot.isEmpty) {
-                    summary.text = """
-                       Total Products: 0
-                       Low Stock Items: 0
-                       Out of Stock Items: 0
-                       Inventory Value: $0.00
-                   """.trimIndent()
+                    totalProductsCard.text = "Total Products\n0"
+                    lowStockCard.text = "Low Stock\n0"
+                    outOfStockCard.text = "Out of Stock\n0"
+                    inventoryValueCard.text = "Inventory Value\n$0.00"
+
+                    detailText.text = "No products found."
                     return@addSnapshotListener
                 }
 
@@ -103,12 +154,44 @@ class InventoryReportPage(private val activity: Activity) {
                 }
 
 
-                summary.text = """
-                   Total Products: $totalProducts
-                   Low Stock Items: $lowStockItems
-                   Out of Stock Items: $outOfStockItems
-                   Inventory Value: $${"%.2f".format(inventoryValue)}
+                totalProductsCard.text = "Total Products\n$totalProducts"
+                lowStockCard.text = "Low Stock\n$lowStockItems"
+                outOfStockCard.text = "Out of Stock\n$outOfStockItems"
+                inventoryValueCard.text = "Inventory Value\n$${"%.2f".format(inventoryValue)}"
+
+                detailText.text = """
+                Total Products: $totalProducts
+
+                Low Stock Items: $lowStockItems
+
+                Out of Stock Items: $outOfStockItems
+
+                Inventory Value:
+                $${"%.2f".format(inventoryValue)}
                """.trimIndent()
             }
     }
+
+    private fun makeSummaryCard(label: String, value: String, color: Int): TextView {
+
+        val card = TextView(activity)
+        card.text = "$label\n$value"
+        card.textSize = 18f
+        card.setTextColor(color)
+        card.gravity = Gravity.CENTER
+        card.setBackgroundColor(Color.rgb(245, 247, 250))
+        card.setPadding(20, 24, 20, 24)
+
+        val params = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        params.setMargins(6, 0, 6, 0)
+        card.layoutParams = params
+
+        return card
+    }
+
 }
