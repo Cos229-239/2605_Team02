@@ -756,26 +756,50 @@ class POSPage(private val activity: Activity) {
         val cashRow1 = LinearLayout(activity)
         cashRow1.orientation = LinearLayout.HORIZONTAL
 
-        val fiveButton = Button(activity)
+        val fiveButton = TextView(activity)
         fiveButton.text = "$5"
+        fiveButton.textSize = 13f
+        fiveButton.gravity = android.view.Gravity.CENTER
+        fiveButton.setTextColor(Color.rgb(34, 120, 60))
+        fiveButton.setPadding(0, 14, 0, 14)
 
-        val tenButton = Button(activity)
+        val tenButton = TextView(activity)
         tenButton.text = "$10"
+        tenButton.textSize = 13f
+        tenButton.gravity = android.view.Gravity.CENTER
+        tenButton.setTextColor(Color.rgb(34, 120, 60))
+        tenButton.setPadding(0, 14, 0, 14)
 
-        val twentyButton = Button(activity)
+        val twentyButton = TextView(activity)
         twentyButton.text = "$20"
+        twentyButton.textSize = 13f
+        twentyButton.gravity = android.view.Gravity.CENTER
+        twentyButton.setTextColor(Color.rgb(34, 120, 60))
+        twentyButton.setPadding(0, 14, 0, 14)
 
         val cashRow2 = LinearLayout(activity)
         cashRow2.orientation = LinearLayout.HORIZONTAL
 
-        val fiftyButton = Button(activity)
+        val fiftyButton = TextView(activity)
         fiftyButton.text = "$50"
+        fiftyButton.textSize = 13f
+        fiftyButton.gravity = android.view.Gravity.CENTER
+        fiftyButton.setTextColor(Color.rgb(34, 120, 60))
+        fiftyButton.setPadding(0, 14, 0, 14)
 
-        val hundredButton = Button(activity)
+        val hundredButton = TextView(activity)
         hundredButton.text = "$100"
+        hundredButton.textSize = 13f
+        hundredButton.gravity = android.view.Gravity.CENTER
+        hundredButton.setTextColor(Color.rgb(34, 120, 60))
+        hundredButton.setPadding(0, 14, 0, 14)
 
-        val exactButton = Button(activity)
+        val exactButton = TextView(activity)
         exactButton.text = "FULL"
+        exactButton.textSize = 13f
+        exactButton.gravity = android.view.Gravity.CENTER
+        exactButton.setTextColor(Color.rgb(34, 120, 60))
+        exactButton.setPadding(0, 14, 0, 14)
 
         val cashButtonParams = LinearLayout.LayoutParams(
             0,
@@ -793,12 +817,12 @@ class POSPage(private val activity: Activity) {
         cashRow2.addView(hundredButton, cashButtonParams)
         cashRow2.addView(exactButton, cashButtonParams)
 
-        fiveButton.setBackgroundColor(Color.rgb(120, 160, 120))
-        tenButton.setBackgroundColor(Color.rgb(120, 160, 120))
-        twentyButton.setBackgroundColor(Color.rgb(120, 160, 120))
-        fiftyButton.setBackgroundColor(Color.rgb(120, 160, 120))
-        hundredButton.setBackgroundColor(Color.rgb(120, 160, 120))
-        exactButton.setBackgroundColor(Color.rgb(120, 160, 120))
+        fiveButton.setBackgroundColor(Color.rgb(220, 245, 228))
+        tenButton.setBackgroundColor(Color.rgb(220, 245, 228))
+        twentyButton.setBackgroundColor(Color.rgb(220, 245, 228))
+        fiftyButton.setBackgroundColor(Color.rgb(220, 245, 228))
+        hundredButton.setBackgroundColor(Color.rgb(220, 245, 228))
+        exactButton.setBackgroundColor(Color.rgb(220, 245, 228))
 
         cashButtonsGrid.addView(cashRow1)
         cashButtonsGrid.addView(cashRow2)
@@ -826,14 +850,29 @@ class POSPage(private val activity: Activity) {
         val keypadRow1 = LinearLayout(activity)
         keypadRow1.orientation = LinearLayout.HORIZONTAL
 
-        val button1 = Button(activity)
+        val button1 = TextView(activity)
         button1.text = "1"
+        button1.textSize = 16f
+        button1.gravity = android.view.Gravity.CENTER
+        button1.setTextColor(Color.rgb(33, 37, 41))
+        button1.setBackgroundColor(Color.rgb(248, 249, 250))
+        button1.setPadding(0, 18, 0, 18)
 
-        val button2 = Button(activity)
+        val button2 = TextView(activity)
         button2.text = "2"
+        button2.textSize = 16f
+        button2.gravity = android.view.Gravity.CENTER
+        button2.setTextColor(Color.rgb(33, 37, 41))
+        button2.setBackgroundColor(Color.rgb(248, 249, 250))
+        button2.setPadding(0, 18, 0, 18)
 
-        val button3 = Button(activity)
+        val button3 = TextView(activity)
         button3.text = "3"
+        button3.textSize = 16f
+        button3.gravity = android.view.Gravity.CENTER
+        button3.setTextColor(Color.rgb(33, 37, 41))
+        button3.setBackgroundColor(Color.rgb(248, 249, 250))
+        button3.setPadding(0, 18, 0, 18)
 
         keypadRow1.addView(button1, keypadButtonParams)
         keypadRow1.addView(button2, keypadButtonParams)
@@ -842,14 +881,29 @@ class POSPage(private val activity: Activity) {
         val keypadRow2 = LinearLayout(activity)
         keypadRow2.orientation = LinearLayout.HORIZONTAL
 
-        val button4 = Button(activity)
+        val button4 = TextView(activity)
         button4.text = "4"
+        button4.textSize = 16f
+        button4.gravity = android.view.Gravity.CENTER
+        button4.setTextColor(Color.rgb(33, 37, 41))
+        button4.setBackgroundColor(Color.rgb(248, 249, 250))
+        button4.setPadding(0, 18, 0, 18)
 
-        val button5 = Button(activity)
+        val button5 = TextView(activity)
         button5.text = "5"
+        button5.textSize = 16f
+        button5.gravity = android.view.Gravity.CENTER
+        button5.setTextColor(Color.rgb(33, 37, 41))
+        button5.setBackgroundColor(Color.rgb(248, 249, 250))
+        button5.setPadding(0, 18, 0, 18)
 
-        val button6 = Button(activity)
+        val button6 = TextView(activity)
         button6.text = "6"
+        button6.textSize = 16f
+        button6.gravity = android.view.Gravity.CENTER
+        button6.setTextColor(Color.rgb(33, 37, 41))
+        button6.setBackgroundColor(Color.rgb(248, 249, 250))
+        button6.setPadding(0, 18, 0, 18)
 
         keypadRow2.addView(button4, keypadButtonParams)
         keypadRow2.addView(button5, keypadButtonParams)
@@ -858,14 +912,29 @@ class POSPage(private val activity: Activity) {
         val keypadRow3 = LinearLayout(activity)
         keypadRow3.orientation = LinearLayout.HORIZONTAL
 
-        val button7 = Button(activity)
+        val button7 = TextView(activity)
         button7.text = "7"
+        button7.textSize = 16f
+        button7.gravity = android.view.Gravity.CENTER
+        button7.setTextColor(Color.rgb(33, 37, 41))
+        button7.setBackgroundColor(Color.rgb(248, 249, 250))
+        button7.setPadding(0, 18, 0, 18)
 
-        val button8 = Button(activity)
+        val button8 = TextView(activity)
         button8.text = "8"
+        button8.textSize = 16f
+        button8.gravity = android.view.Gravity.CENTER
+        button8.setTextColor(Color.rgb(33, 37, 41))
+        button8.setBackgroundColor(Color.rgb(248, 249, 250))
+        button8.setPadding(0, 18, 0, 18)
 
-        val button9 = Button(activity)
+        val button9 = TextView(activity)
         button9.text = "9"
+        button9.textSize = 16f
+        button9.gravity = android.view.Gravity.CENTER
+        button9.setTextColor(Color.rgb(33, 37, 41))
+        button9.setBackgroundColor(Color.rgb(248, 249, 250))
+        button9.setPadding(0, 18, 0, 18)
 
         keypadRow3.addView(button7, keypadButtonParams)
         keypadRow3.addView(button8, keypadButtonParams)
@@ -874,14 +943,29 @@ class POSPage(private val activity: Activity) {
         val keypadRow4 = LinearLayout(activity)
         keypadRow4.orientation = LinearLayout.HORIZONTAL
 
-        val decimalButton = Button(activity)
+        val decimalButton = TextView(activity)
         decimalButton.text = "."
+        decimalButton.textSize = 16f
+        decimalButton.gravity = android.view.Gravity.CENTER
+        decimalButton.setTextColor(Color.rgb(33, 37, 41))
+        decimalButton.setBackgroundColor(Color.rgb(248, 249, 250))
+        decimalButton.setPadding(0, 18, 0, 18)
 
-        val button0 = Button(activity)
+        val button0 = TextView(activity)
         button0.text = "0"
+        button0.textSize = 16f
+        button0.gravity = android.view.Gravity.CENTER
+        button0.setTextColor(Color.rgb(33, 37, 41))
+        button0.setBackgroundColor(Color.rgb(248, 249, 250))
+        button0.setPadding(0, 18, 0, 18)
 
-        val backspaceButton = Button(activity)
+        val backspaceButton = TextView(activity)
         backspaceButton.text = "⌫"
+        backspaceButton.textSize = 16f
+        backspaceButton.gravity = android.view.Gravity.CENTER
+        backspaceButton.setTextColor(Color.rgb(180, 60, 50))
+        backspaceButton.setBackgroundColor(Color.rgb(248, 249, 250))
+        backspaceButton.setPadding(0, 18, 0, 18)
 
         keypadRow4.addView(decimalButton, keypadButtonParams)
         keypadRow4.addView(button0, keypadButtonParams)
@@ -894,32 +978,59 @@ class POSPage(private val activity: Activity) {
 
         rightPanel.addView(keypadGrid, keypadParams)
 
-        val clearAmountButton = Button(activity)
+        val clearAmountButton = TextView(activity)
         clearAmountButton.text = "Clear Amount"
+        clearAmountButton.textSize = 13f
+        clearAmountButton.gravity = android.view.Gravity.CENTER
+        clearAmountButton.setTextColor(Color.WHITE)
         clearAmountButton.setBackgroundColor(Color.rgb(230, 149, 62))
+        clearAmountButton.setPadding(0, 16, 0, 16)
 
-        val applyPaymentButton = Button(activity)
+        val applyPaymentButton = TextView(activity)
         applyPaymentButton.text = "Apply Payment"
+        applyPaymentButton.textSize = 13f
+        applyPaymentButton.gravity = android.view.Gravity.CENTER
+        applyPaymentButton.setTextColor(Color.WHITE)
         applyPaymentButton.setBackgroundColor(Color.rgb(76, 175, 80))
+        applyPaymentButton.setPadding(0, 16, 0, 16)
 
-        val completeSaleButton = Button(activity)
+        val completeSaleButton = TextView(activity)
         completeSaleButton.text = "Complete Sale"
+        completeSaleButton.textSize = 13f
+        completeSaleButton.gravity = android.view.Gravity.CENTER
+        completeSaleButton.setTextColor(Color.WHITE)
         completeSaleButton.setBackgroundColor(Color.rgb(211, 47, 47))
+        completeSaleButton.setPadding(0, 16, 0, 16)
 
-        val cancelTransactionButton = Button(activity)
-        cancelTransactionButton.text = "Cancel Transaction"
+        val cancelTransactionButton = TextView(activity)
+        cancelTransactionButton.text = "Cancel"
+        cancelTransactionButton.textSize = 13f
+        cancelTransactionButton.gravity = android.view.Gravity.CENTER
+        cancelTransactionButton.setTextColor(Color.rgb(80, 80, 80))
+        cancelTransactionButton.setBackgroundColor(Color.rgb(235, 235, 235))
+        cancelTransactionButton.setPadding(0, 16, 0, 16)
 
-        val actionButtonParams = LinearLayout.LayoutParams(
+        val actionCellParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        actionCellParams.setMargins(3, 3, 3, 3)
+
+        val actionRow1 = LinearLayout(activity)
+        actionRow1.orientation = LinearLayout.HORIZONTAL
+        actionRow1.addView(clearAmountButton, actionCellParams)
+        actionRow1.addView(applyPaymentButton, actionCellParams)
+
+        val actionRow2 = LinearLayout(activity)
+        actionRow2.orientation = LinearLayout.HORIZONTAL
+        actionRow2.addView(completeSaleButton, actionCellParams)
+        actionRow2.addView(cancelTransactionButton, actionCellParams)
+
+        val actionGridParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+        actionGridParams.setMargins(0, 4, 0, 4)
 
-        actionButtonParams.setMargins(0, 3, 0, 3)
-
-        rightPanel.addView(clearAmountButton, actionButtonParams)
-        rightPanel.addView(applyPaymentButton, actionButtonParams)
-        rightPanel.addView(completeSaleButton, actionButtonParams)
-        rightPanel.addView(cancelTransactionButton, actionButtonParams)
+        rightPanel.addView(actionRow1, actionGridParams)
+        rightPanel.addView(actionRow2, actionGridParams)
 
         clearAmountButton.setOnClickListener {
             paymentAmountBox.setText("")
@@ -1274,6 +1385,7 @@ class POSPage(private val activity: Activity) {
         val rightScrollView = ScrollView(activity)
         rightScrollView.isVerticalScrollBarEnabled = true
         rightScrollView.isScrollbarFadingEnabled = false
+        rightScrollView.setBackgroundColor(Color.rgb(235, 239, 245))
 
         rightScrollView.addView(rightPanel)
 
