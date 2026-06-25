@@ -207,7 +207,14 @@ class TimecardPage(private val activity: Activity) {
         clockInBtn.setOnClickListener { clockIn() }
 
         clockOutBtn = makeClockButton("Clock Out", Color.rgb(239, 68, 68))
-        clockOutBtn.setOnClickListener { clockOut() }
+        clockOutBtn.setOnClickListener {
+            AlertDialog.Builder(activity)
+                .setTitle("Clock Out?")
+                .setMessage("Are you sure you want to clock out now?")
+                .setPositiveButton("Clock Out") { _, _ -> clockOut() }
+                .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+                .show()
+        }
 
         breakBtn = makeClockButton("Break Out", Color.rgb(245, 158, 11))
         breakBtn.setOnClickListener { toggleBreak() }
@@ -686,70 +693,6 @@ class TimecardPage(private val activity: Activity) {
         }
     }
 
-    // Shows a dialog for managers to edit a timecard entry
-    private fun showEditTimecardDialog(
-        docId: String,
-        date: String,
-        currentClockIn: Timestamp?,
-        currentClockOut: Timestamp?,
-        currentBreakStart: Timestamp?,
-        currentBreakEnd: Timestamp?
-    ) {
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-
-        val builder = AlertDialog.Builder(activity)
-        builder.setTitle("Edit Timecard - $date")
-
-        val form = LinearLayout(activity)
-        form.orientation = LinearLayout.VERTICAL
-        form.setPadding(dp(20), dp(10), dp(20), dp(10))
-
-        // Clock In input
-        val clockInLabel = makeDialogLabel("Clock In (HH:mm)")
-        val clockInInput = makeDialogInput(
-            currentClockIn?.let { timeFormat.format(it.toDate()) } ?: "")
-
-        // Clock Out input
-        val clockOutLabel = makeDialogLabel("Clock Out (HH:mm)")
-        val clockOutInput = makeDialogInput(
-            currentClockOut?.let { timeFormat.format(it.toDate()) } ?: "")
-
-        // Break Start input
-        val breakStartLabel = makeDialogLabel("Break Start (HH:mm)")
-        val breakStartInput = makeDialogInput(
-            currentBreakStart?.let { timeFormat.format(it.toDate()) } ?: "")
-
-        // Break End input
-        val breakEndLabel = makeDialogLabel("Break End (HH:mm)")
-        val breakEndInput = makeDialogInput(
-            currentBreakEnd?.let { timeFormat.format(it.toDate()) } ?: "")
-
-        form.addView(clockInLabel)
-        form.addView(clockInInput)
-        form.addView(clockOutLabel)
-        form.addView(clockOutInput)
-        form.addView(breakStartLabel)
-        form.addView(breakStartInput)
-        form.addView(breakEndLabel)
-        form.addView(breakEndInput)
-
-        builder.setView(form)
-
-        builder.setPositiveButton("Save") { _, _ ->
-            saveEditedTimecard(
-                docId,
-                date,
-                clockInInput.text.toString(),
-                clockOutInput.text.toString(),
-                breakStartInput.text.toString(),
-                breakEndInput.text.toString()
-            )
-        }
-
-        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-        builder.show()
-    }
-
     // Saves the edited timecard to Firestore
     private fun saveEditedTimecard(
         docId: String,
@@ -759,24 +702,47 @@ class TimecardPage(private val activity: Activity) {
         breakStartStr: String,
         breakEndStr: String
     ) {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        dateFormat.isLenient = false
+
+        // Validates and parses a time string, returns null if invalid format
+        // but distinguishes "empty" (ok) from "bad format" (not ok)
+        fun parseTimeOrNull(timeStr: String): Pair<Timestamp?, Boolean> {
+            if (timeStr.isBlank()) return Pair(null, true) // empty is valid (means "not set")
+            return try {
+                val parsed = dateFormat.parse("$date $timeStr")
+                if (parsed != null) Pair(Timestamp(parsed), true) else Pair(null, false)
+            } catch (e: Exception) {
+                Pair(null, false)
+            }
+        }
+
+        val (clockIn, clockInValid) = parseTimeOrNull(clockInStr)
+        val (clockOut, clockOutValid) = parseTimeOrNull(clockOutStr)
+        val (breakStart, breakStartValid) = parseTimeOrNull(breakStartStr)
+        val (breakEnd, breakEndValid) = parseTimeOrNull(breakEndStr)
+
+        if (!clockInValid || !clockOutValid || !breakStartValid || !breakEndValid) {
+            android.widget.Toast.makeText(
+                activity,
+                "Invalid time format. Please use HH:mm (e.g. 09:00 or 17:30)",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        if (clockIn != null && clockOut != null &&
+            clockOut.toDate().before(clockIn.toDate())) {
+            android.widget.Toast.makeText(
+                activity,
+                "Clock out time cannot be before clock in time",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-
-                fun parseTime(timeStr: String): Timestamp? {
-                    return if (timeStr.isNotEmpty()) {
-                        try {
-                            val date = dateFormat.parse("$date $timeStr")
-                            date?.let { Timestamp(it) }
-                        } catch (e: Exception) { null }
-                    } else null
-                }
-
-                val clockIn = parseTime(clockInStr)
-                val clockOut = parseTime(clockOutStr)
-                val breakStart = parseTime(breakStartStr)
-                val breakEnd = parseTime(breakEndStr)
-
                 // Recalculate break minutes
                 val breakMinutes = if (breakStart != null && breakEnd != null) {
                     val diff = breakEnd.toDate().time - breakStart.toDate().time
@@ -827,6 +793,66 @@ class TimecardPage(private val activity: Activity) {
                 }
             }
         }
+    }
+
+    // Shows a dialog for managers to edit a timecard entry
+    private fun showEditTimecardDialog(
+        docId: String,
+        date: String,
+        currentClockIn: Timestamp?,
+        currentClockOut: Timestamp?,
+        currentBreakStart: Timestamp?,
+        currentBreakEnd: Timestamp?
+    ) {
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+        val builder = AlertDialog.Builder(activity)
+        builder.setTitle("Edit Timecard - $date")
+
+        val form = LinearLayout(activity)
+        form.orientation = LinearLayout.VERTICAL
+        form.setPadding(dp(20), dp(10), dp(20), dp(10))
+
+        val clockInLabel = makeDialogLabel("Clock In (HH:mm)")
+        val clockInInput = makeDialogInput(
+            currentClockIn?.let { timeFormat.format(it.toDate()) } ?: "")
+
+        val clockOutLabel = makeDialogLabel("Clock Out (HH:mm)")
+        val clockOutInput = makeDialogInput(
+            currentClockOut?.let { timeFormat.format(it.toDate()) } ?: "")
+
+        val breakStartLabel = makeDialogLabel("Break Start (HH:mm)")
+        val breakStartInput = makeDialogInput(
+            currentBreakStart?.let { timeFormat.format(it.toDate()) } ?: "")
+
+        val breakEndLabel = makeDialogLabel("Break End (HH:mm)")
+        val breakEndInput = makeDialogInput(
+            currentBreakEnd?.let { timeFormat.format(it.toDate()) } ?: "")
+
+        form.addView(clockInLabel)
+        form.addView(clockInInput)
+        form.addView(clockOutLabel)
+        form.addView(clockOutInput)
+        form.addView(breakStartLabel)
+        form.addView(breakStartInput)
+        form.addView(breakEndLabel)
+        form.addView(breakEndInput)
+
+        builder.setView(form)
+
+        builder.setPositiveButton("Save") { _, _ ->
+            saveEditedTimecard(
+                docId,
+                date,
+                clockInInput.text.toString(),
+                clockOutInput.text.toString(),
+                breakStartInput.text.toString(),
+                breakEndInput.text.toString()
+            )
+        }
+
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+        builder.show()
     }
 
     // Updates clock in/out/break button states

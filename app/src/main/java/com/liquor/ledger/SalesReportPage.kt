@@ -18,6 +18,10 @@ class SalesReportPage(private val activity: Activity) {
     private val allSales = mutableListOf<SaleRow>()
     private lateinit var reportText: TextView
     private lateinit var filterSpinner: Spinner
+    private lateinit var totalTransactionsCard: TextView
+    private lateinit var totalSalesCard: TextView
+    private lateinit var averageSaleCard: TextView
+    private lateinit var filterPeriodCard: TextView
 
     data class SaleRow(
         val date: Date,
@@ -29,13 +33,19 @@ class SalesReportPage(private val activity: Activity) {
     fun build(): LinearLayout {
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
-        root.setPadding(40, 40, 40, 40)
         root.setBackgroundColor(Color.WHITE)
 
         val title = TextView(activity)
         title.text = "Sales Report"
         title.textSize = 28f
+        title.setTypeface(null, android.graphics.Typeface.BOLD)
         title.setTextColor(Color.BLACK)
+
+        val subtitle = TextView(activity)
+        subtitle.text = "Summary of transactions, revenue, and averages."
+        subtitle.textSize = 16f
+        subtitle.setTextColor(Color.DKGRAY)
+        subtitle.setPadding(0, 10, 0, 30)
 
         filterSpinner = Spinner(activity)
         filterSpinner.adapter = ArrayAdapter(
@@ -44,23 +54,77 @@ class SalesReportPage(private val activity: Activity) {
             listOf("30d", "60d", "90d", "YTD", "All")
         )
 
-        val exportReportBtn = Button(activity)
-        exportReportBtn.text = "Export This Report to Excel"
+        val exportReportBtn = TextView(activity)
+        exportReportBtn.text = "Export This Report to CSV"
+        exportReportBtn.textSize = 15f
+        exportReportBtn.gravity = android.view.Gravity.CENTER
+        exportReportBtn.setTextColor(Color.WHITE)
+        exportReportBtn.setBackgroundColor(Color.rgb(45, 95, 255))
+        exportReportBtn.setPadding(24, 20, 24, 20)
+        val exportReportParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        exportReportParams.setMargins(0, 0, 0, 12)
+        exportReportBtn.layoutParams = exportReportParams
 
-        val exportFullBtn = Button(activity)
+        val exportFullBtn = TextView(activity)
         exportFullBtn.text = "Full Data Export"
+        exportFullBtn.textSize = 15f
+        exportFullBtn.gravity = android.view.Gravity.CENTER
+        exportFullBtn.setTextColor(Color.rgb(45, 95, 255))
+        exportFullBtn.setBackgroundColor(Color.rgb(245, 247, 250))
+        exportFullBtn.setPadding(24, 20, 24, 20)
+        val exportFullParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        exportFullParams.setMargins(0, 0, 0, 24)
+        exportFullBtn.layoutParams = exportFullParams
+
+        totalTransactionsCard = makeSummaryCard("Total Transactions", "0", Color.rgb(45, 95, 255))
+        totalSalesCard = makeSummaryCard("Total Sales", "$0.00", Color.rgb(20, 180, 120))
+        averageSaleCard = makeSummaryCard("Average Sale", "$0.00", Color.rgb(230, 149, 62))
+        filterPeriodCard = makeSummaryCard("Period", "All", Color.rgb(120, 80, 200))
+
+        val summaryRow1 = LinearLayout(activity)
+        summaryRow1.orientation = LinearLayout.HORIZONTAL
+        summaryRow1.addView(totalTransactionsCard)
+        summaryRow1.addView(totalSalesCard)
+
+        val summaryRow2 = LinearLayout(activity)
+        summaryRow2.orientation = LinearLayout.HORIZONTAL
+        summaryRow2.setPadding(0, 16, 0, 24)
+        summaryRow2.addView(averageSaleCard)
+        summaryRow2.addView(filterPeriodCard)
 
         reportText = TextView(activity)
-        reportText.textSize = 18f
-        reportText.setTextColor(Color.BLACK)
+        reportText.textSize = 16f
+        reportText.setTextColor(Color.DKGRAY)
+        reportText.setBackgroundColor(Color.rgb(245, 247, 250))
+        reportText.setPadding(24, 24, 24, 24)
         reportText.gravity = Gravity.START
-        reportText.setPadding(0, 30, 0, 0)
 
-        root.addView(title)
-        root.addView(filterSpinner)
-        root.addView(exportReportBtn)
-        root.addView(exportFullBtn)
-        root.addView(reportText)
+        val scrollView = ScrollView(activity)
+        val page = LinearLayout(activity)
+        page.orientation = LinearLayout.VERTICAL
+        page.setPadding(40, 40, 40, 40)
+        page.setBackgroundColor(Color.WHITE)
+
+        page.addView(title)
+        page.addView(subtitle)
+        page.addView(filterSpinner)
+        page.addView(exportReportBtn)
+        page.addView(exportFullBtn)
+        page.addView(summaryRow1)
+        page.addView(summaryRow2)
+        page.addView(reportText)
+
+        scrollView.addView(page)
+        root.addView(scrollView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        ))
 
         filterSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
@@ -120,6 +184,11 @@ class SalesReportPage(private val activity: Activity) {
         val totalTransactions = filtered.size
         val averageSale = if (totalTransactions > 0) totalSales / totalTransactions else 0.0
 
+        totalTransactionsCard.text = "Total Transactions\n$totalTransactions"
+        totalSalesCard.text = "Total Sales\n$${"%.2f".format(totalSales)}"
+        averageSaleCard.text = "Average Sale\n$${"%.2f".format(averageSale)}"
+        filterPeriodCard.text = "Period\n${filterSpinner.selectedItem}"
+
         reportText.text = """
             Filter: ${filterSpinner.selectedItem}
 
@@ -156,6 +225,20 @@ class SalesReportPage(private val activity: Activity) {
             }
             else -> allSales
         }
+    }
+
+    private fun makeSummaryCard(label: String, value: String, color: Int): TextView {
+        val card = TextView(activity)
+        card.text = "$label\n$value"
+        card.textSize = 18f
+        card.setTextColor(color)
+        card.gravity = Gravity.CENTER
+        card.setBackgroundColor(Color.rgb(245, 247, 250))
+        card.setPadding(20, 24, 20, 24)
+        val params = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        params.setMargins(6, 0, 6, 0)
+        card.layoutParams = params
+        return card
     }
 
     private fun exportSales(sales: List<SaleRow>, fileName: String) {
