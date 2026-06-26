@@ -3,6 +3,7 @@ package com.liquor.ledger
 import android.app.Activity
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -46,6 +47,13 @@ class EmergencyContactsPage(private val activity: Activity) {
         val topRow = LinearLayout(activity)
         topRow.orientation = LinearLayout.HORIZONTAL
 
+        val rightSectionParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+        rightSectionParams.marginStart = 10
+
         topRow.addView(
             createSection(
                 "Emergency Services",
@@ -57,7 +65,9 @@ class EmergencyContactsPage(private val activity: Activity) {
                     Triple("Poison Control", "1-800-222-1222", "HOTLINE")
                 )
             ),
-            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = 10
+            }
         )
 
         topRow.addView(
@@ -135,8 +145,16 @@ class EmergencyContactsPage(private val activity: Activity) {
             "For life-threatening emergencies, always dial 911 first. Then contact store management and follow emergency procedures posted in the break room."
         protocolText.textSize = 13f
 
+
         // Changes protocol message color based on Settings - AF
         protocolText.setTextColor(ThemeManager.secondaryText(activity))
+
+        // Changes protocol box background based on settings - AF
+        val protocolBackground = GradientDrawable()
+        protocolBackground.setColor(ThemeManager.emergencyBackground(activity))
+        protocolBackground.cornerRadius = 30f
+
+        protocolBox.background = protocolBackground
 
         protocolBox.addView(protocolTitle)
         protocolBox.addView(protocolText)
@@ -167,6 +185,11 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         // Changes section BG color based on Settings - AF
         section.setBackgroundColor(ThemeManager.sectionBackground(activity))
+        val sectionBackground = GradientDrawable()
+        sectionBackground.setColor(ThemeManager.sectionBackground(activity))
+        sectionBackground.cornerRadius = 30f
+
+        section.background = sectionBackground
 
         val sectionTitle = TextView(activity)
         sectionTitle.text = title
@@ -213,6 +236,11 @@ class EmergencyContactsPage(private val activity: Activity) {
 
         // Changes contact card background based on Settings - AF
         card.setBackgroundColor(ThemeManager.cardBackground(activity))
+        val cardBackground = GradientDrawable()
+        cardBackground.setColor(ThemeManager.cardBackground(activity))
+        cardBackground.cornerRadius = 24f
+
+        card.background = cardBackground
 
         val topRow = LinearLayout(activity)
         topRow.orientation = LinearLayout.HORIZONTAL
@@ -228,12 +256,33 @@ class EmergencyContactsPage(private val activity: Activity) {
         badge.setPadding(12, 4, 12, 4)
 
         // Changes badge colors based on Settings - AF
+        val badgeBackground = GradientDrawable()
+        badgeBackground.cornerRadius = 100f
+
         when (type) {
-            "EMERGENCY" -> badge.setTextColor(ThemeManager.negative(activity))
-            "HOTLINE" -> badge.setTextColor(ThemeManager.warning(activity))
-            "SERVICE" -> badge.setTextColor(ThemeManager.mutedText(activity))
-            else -> badge.setTextColor(ThemeManager.primaryAction(activity))
+
+            "EMERGENCY" -> {
+                badge.setTextColor(Color.WHITE)
+                badgeBackground.setColor(ThemeManager.negative(activity))
+            }
+
+            "HOTLINE" -> {
+                badge.setTextColor(Color.WHITE)
+                badgeBackground.setColor(ThemeManager.warning(activity))
+            }
+
+            "SERVICE" -> {
+                badge.setTextColor(Color.WHITE)
+                badgeBackground.setColor(ThemeManager.mutedText(activity))
+            }
+
+            else -> {
+                badge.setTextColor(Color.WHITE)
+                badgeBackground.setColor(ThemeManager.primaryAction(activity))
+            }
         }
+
+        badge.background = badgeBackground
 
         val spacer = TextView(activity)
         spacer.layoutParams =
