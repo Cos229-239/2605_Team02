@@ -142,11 +142,21 @@ object ThemeManager {
         }
     }
 
+    // DIVIDER COLOR
     fun divider(activity: Activity): Int {
         return if (isDarkMode(activity)) {
             Color.rgb(80, 80, 80)
         } else {
             Color.rgb(229, 231, 235)
+        }
+    }
+
+    // MUTED BUTTON COLOR
+    fun mutedButton(activity: Activity): Int {
+        return if (isDarkMode(activity)) {
+            Color.rgb(90, 90, 90)
+        } else {
+            Color.rgb(107, 114, 128)
         }
     }
 }
