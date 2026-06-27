@@ -49,11 +49,15 @@ class POSPage(private val activity: Activity) {
 
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.HORIZONTAL
-        page.setBackgroundColor(Color.WHITE)
+
+        // Changes main POS page background based on Settings - AF
+        page.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val leftSide = LinearLayout(activity)
         leftSide.orientation = LinearLayout.VERTICAL
-        leftSide.setBackgroundColor(Color.rgb(245, 247, 250))
+
+        // Changes left POS area background based on Settings - AF
+        leftSide.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         leftSide.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -69,7 +73,9 @@ class POSPage(private val activity: Activity) {
         val headerBox = LinearLayout(activity)
         headerBox.orientation = LinearLayout.HORIZONTAL
         headerBox.setPadding(30, 25, 30, 20)
-        headerBox.setBackgroundColor(Color.WHITE)
+
+        // Changes header background based on Settings - AF
+        headerBox.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val headerParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -88,11 +94,15 @@ class POSPage(private val activity: Activity) {
         val headerTitle = TextView(activity)
         headerTitle.text = "Point of Sale / Register"
         headerTitle.textSize = 24f
-        headerTitle.setTextColor(Color.BLACK)
+
+        // Changes header title color based on Settings - AF
+        headerTitle.setTextColor(ThemeManager.primaryText(activity))
 
         val headerDate = TextView(activity)
         headerDate.textSize = 14f
-        headerDate.setTextColor(Color.GRAY)
+
+        // Changes header date color based on Settings - AF
+        headerDate.setTextColor(ThemeManager.mutedText(activity))
 
         val dateFormat = SimpleDateFormat(
             "EEEE, MMMM d, yyyy • h:mm a",
@@ -110,12 +120,16 @@ class POSPage(private val activity: Activity) {
         val cashDrawerText = TextView(activity)
         cashDrawerText.text = "Cash Drawer: \$0.00"
         cashDrawerText.textSize = 16f
-        cashDrawerText.setTextColor(Color.BLACK)
+
+        // Changes cash drawer text color based on Settings - AF
+        cashDrawerText.setTextColor(ThemeManager.primaryText(activity))
 
         val drawerStatusText = TextView(activity)
         drawerStatusText.text = "Drawer Closed"
         drawerStatusText.textSize = 13f
-        drawerStatusText.setTextColor(Color.GRAY)
+
+        // Changes drawer status text color based on Settings - AF
+        drawerStatusText.setTextColor(ThemeManager.mutedText(activity))
 
         rightHeader.addView(cashDrawerText)
         rightHeader.addView(drawerStatusText)
@@ -128,7 +142,9 @@ class POSPage(private val activity: Activity) {
         val entryRow = LinearLayout(activity)
         entryRow.orientation = LinearLayout.HORIZONTAL
         entryRow.setPadding(30, 20, 30, 20)
-        entryRow.setBackgroundColor(Color.WHITE)
+
+        // Changes entry row background based on Settings - AF
+        entryRow.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val entryRowParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -143,9 +159,10 @@ class POSPage(private val activity: Activity) {
         searchBox.setHintTextColor(Color.DKGRAY)
         searchBox.setBackgroundColor(Color.rgb(245, 245, 245))
 
-        searchBox.hint = "Scan or search product"
-        searchBox.textSize = 16f
-        searchBox.setSingleLine(true)
+        // Changes search box colors based on Settings - AF
+        searchBox.setTextColor(ThemeManager.primaryText(activity))
+        searchBox.setHintTextColor(ThemeManager.secondaryText(activity))
+        searchBox.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         val searchParams = LinearLayout.LayoutParams(
             0,
@@ -155,9 +172,10 @@ class POSPage(private val activity: Activity) {
 
         val qtyBox = EditText(activity)
 
-        qtyBox.setTextColor(Color.BLACK)
-        qtyBox.setHintTextColor(Color.DKGRAY)
-        qtyBox.setBackgroundColor(Color.rgb(245, 245, 245))
+        // Changes quantity box colors based on Settings - AF
+        qtyBox.setTextColor(ThemeManager.primaryText(activity))
+        qtyBox.setHintTextColor(ThemeManager.secondaryText(activity))
+        qtyBox.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         qtyBox.hint = "Qty"
         qtyBox.textSize = 16f
@@ -172,9 +190,10 @@ class POSPage(private val activity: Activity) {
 
         val priceBox = EditText(activity)
 
-        priceBox.setTextColor(Color.BLACK)
-        priceBox.setHintTextColor(Color.DKGRAY)
-        priceBox.setBackgroundColor(Color.rgb(245, 245, 245))
+        // Changes price box colors based on Settings - AF
+        priceBox.setTextColor(ThemeManager.primaryText(activity))
+        priceBox.setHintTextColor(ThemeManager.secondaryText(activity))
+        priceBox.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         priceBox.hint = "Price"
         priceBox.textSize = 16f
@@ -182,9 +201,10 @@ class POSPage(private val activity: Activity) {
 
         val discountBox = EditText(activity)
 
-        discountBox.setTextColor(Color.BLACK)
-        discountBox.setHintTextColor(Color.DKGRAY)
-        discountBox.setBackgroundColor(Color.rgb(245, 245, 245))
+        // Changes discount box colors based on Settings - AF
+        discountBox.setTextColor(ThemeManager.primaryText(activity))
+        discountBox.setHintTextColor(ThemeManager.secondaryText(activity))
+        discountBox.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         discountBox.hint = "Discount %"
         discountBox.textSize = 16f
@@ -192,9 +212,10 @@ class POSPage(private val activity: Activity) {
 
         val taxBox = EditText(activity)
 
-        taxBox.setTextColor(Color.BLACK)
-        taxBox.setHintTextColor(Color.DKGRAY)
-        taxBox.setBackgroundColor(Color.rgb(245, 245, 245))
+        // Changes tax box colors based on Settings - AF
+        taxBox.setTextColor(ThemeManager.primaryText(activity))
+        taxBox.setHintTextColor(ThemeManager.secondaryText(activity))
+        taxBox.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         taxBox.hint = "Tax %"
         taxBox.textSize = 16f
@@ -218,7 +239,9 @@ class POSPage(private val activity: Activity) {
 
         val suggestionList = LinearLayout(activity)
         suggestionList.orientation = LinearLayout.VERTICAL
-        suggestionList.setBackgroundColor(Color.WHITE)
+
+        // Changes suggestion list background based on Settings - AF
+        suggestionList.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val suggestionListParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -235,7 +258,9 @@ class POSPage(private val activity: Activity) {
         val cartBox = LinearLayout(activity)
         cartBox.orientation = LinearLayout.VERTICAL
         cartBox.setPadding(30, 20, 30, 20)
-        cartBox.setBackgroundColor(Color.WHITE)
+
+        // Changes cart box background based on Settings - AF
+        cartBox.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val cartBoxParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -252,32 +277,44 @@ class POSPage(private val activity: Activity) {
         val productHeader = TextView(activity)
         productHeader.text = "Product"
         productHeader.textSize = 15f
-        productHeader.setTextColor(Color.BLACK)
+
+        // Changes product header text color based on Settings - AF
+        productHeader.setTextColor(ThemeManager.primaryText(activity))
 
         val qtyHeader = TextView(activity)
         qtyHeader.text = "Qty"
         qtyHeader.textSize = 15f
-        qtyHeader.setTextColor(Color.BLACK)
+
+        // Changes quantity header text color based on Settings - AF
+        qtyHeader.setTextColor(ThemeManager.primaryText(activity))
 
         val priceHeader = TextView(activity)
         priceHeader.text = "Price"
         priceHeader.textSize = 15f
-        priceHeader.setTextColor(Color.BLACK)
+
+        // Changes price header text color based on Settings - AF
+        priceHeader.setTextColor(ThemeManager.primaryText(activity))
 
         val discountHeader = TextView(activity)
         discountHeader.text = "Disc %"
         discountHeader.textSize = 15f
-        discountHeader.setTextColor(Color.BLACK)
+
+        // Changes discount header text color based on Settings - AF
+        discountHeader.setTextColor(ThemeManager.primaryText(activity))
 
         val taxHeader = TextView(activity)
         taxHeader.text = "Tax %"
         taxHeader.textSize = 15f
-        taxHeader.setTextColor(Color.BLACK)
+
+        // Changes tax header text color based on Settings - AF
+        taxHeader.setTextColor(ThemeManager.primaryText(activity))
 
         val totalHeader = TextView(activity)
         totalHeader.text = "Line Total"
         totalHeader.textSize = 15f
-        totalHeader.setTextColor(Color.BLACK)
+
+        // Changes total header text color based on Settings - AF
+        totalHeader.setTextColor(ThemeManager.primaryText(activity))
 
         val wideColumn = LinearLayout.LayoutParams(
             0,
@@ -301,14 +338,19 @@ class POSPage(private val activity: Activity) {
         val removeHeader = TextView(activity)
         removeHeader.text = "Remove"
         removeHeader.textSize = 15f
-        removeHeader.setTextColor(Color.BLACK)
+
+        // Changes remove header text color based on Settings - AF
+        removeHeader.setTextColor(ThemeManager.primaryText(activity))
 
         cartHeader.addView(removeHeader, smallColumn)
 
         val emptyCartText = TextView(activity)
         emptyCartText.text = "No items in cart"
         emptyCartText.textSize = 16f
-        emptyCartText.setTextColor(Color.GRAY)
+
+        // Changes empty cart text color based on Settings - AF
+        emptyCartText.setTextColor(ThemeManager.mutedText(activity))
+
         emptyCartText.setPadding(10, 40, 10, 10)
 
         cartBox.addView(cartHeader)
@@ -335,7 +377,10 @@ class POSPage(private val activity: Activity) {
         val totalsRow = LinearLayout(activity)
         totalsRow.orientation = LinearLayout.HORIZONTAL
         totalsRow.setPadding(30, 8, 30, 8)
-        totalsRow.setBackgroundColor(Color.WHITE)
+
+        // Changes totals row background based on Settings - AF
+        totalsRow.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         totalsRow.elevation = 8f
 
         leftSide.addView(cartBox, cartBoxParams)
@@ -350,17 +395,23 @@ class POSPage(private val activity: Activity) {
         val subtotalText = TextView(activity)
         subtotalText.text = "Subtotal: $0.00"
         subtotalText.textSize = 16f
-        subtotalText.setTextColor(Color.BLACK)
+
+        // Changes subtotals text color based on Settings - AF
+        subtotalText.setTextColor(ThemeManager.primaryText(activity))
 
         val taxText = TextView(activity)
         taxText.text = "Tax: $0.00"
         taxText.textSize = 16f
-        taxText.setTextColor(Color.BLACK)
+
+        // Changes tax text color based on Settings - AF
+        taxText.setTextColor(ThemeManager.primaryText(activity))
 
         val totalText = TextView(activity)
         totalText.text = "Total: $0.00"
         totalText.textSize = 18f
-        totalText.setTextColor(Color.BLACK)
+
+        // Changes totals text color based on Settings - AF
+        totalText.setTextColor(ThemeManager.primaryText(activity))
 
         val totalsTextParams = LinearLayout.LayoutParams(
             0,
@@ -429,38 +480,52 @@ class POSPage(private val activity: Activity) {
             val productCell = TextView(activity)
             productCell.text = selectedProductName
             productCell.textSize = 14f
-            productCell.setTextColor(Color.BLACK)
+
+            // Changes cart row product text color based on Settings - AF
+            productCell.setTextColor(ThemeManager.primaryText(activity))
 
             val qtyCell = TextView(activity)
             qtyCell.text = quantity.toString()
             qtyCell.textSize = 14f
-            qtyCell.setTextColor(Color.BLACK)
+
+            // Changes cart row quantity text color based on Settings - AF
+            qtyCell.setTextColor(ThemeManager.primaryText(activity))
 
             val priceCell = TextView(activity)
             priceCell.text = "$${"%.2f".format(selectedProductPrice)}"
             priceCell.textSize = 14f
-            priceCell.setTextColor(Color.BLACK)
+
+            // Changes cart row price text color based on Settings - AF
+            priceCell.setTextColor(ThemeManager.primaryText(activity))
 
             val discountCell = TextView(activity)
             discountCell.text = "0%"
             discountCell.textSize = 14f
-            discountCell.setTextColor(Color.BLACK)
+
+            // Changes cart row discount text color based on Settings - AF
+            discountCell.setTextColor(ThemeManager.primaryText(activity))
 
             val taxCell = TextView(activity)
             taxCell.text = "${"%.2f".format(selectedProductTax)}%"
             taxCell.textSize = 14f
-            taxCell.setTextColor(Color.BLACK)
+
+            // Changes cart row tax text color based on Settings - AF
+            taxCell.setTextColor(ThemeManager.primaryText(activity))
 
             val totalCell = TextView(activity)
             totalCell.text = "$${"%.2f".format(lineTotal)}"
             totalCell.textSize = 14f
-            totalCell.setTextColor(Color.BLACK)
+
+            // Changes cart row total text color based on Settings - AF
+            totalCell.setTextColor(ThemeManager.primaryText(activity))
 
             val removeButton = Button(activity)
             removeButton.text = "X"
             removeButton.textSize = 12f
             removeButton.setTextColor(Color.WHITE)
-            removeButton.setBackgroundColor(Color.rgb(231, 76, 60))
+
+            // Changes remove button color based on Settings - AF
+            removeButton.setBackgroundColor(ThemeManager.negative(activity))
 
             cartRow.addView(productCell, wideColumn)
             cartRow.addView(qtyCell, smallColumn)
@@ -626,9 +691,15 @@ class POSPage(private val activity: Activity) {
                                 val suggestionItem = TextView(activity)
                                 suggestionItem.text = "${product["name"]}    $${product["price"]}"
                                 suggestionItem.textSize = 15f
-                                suggestionItem.setTextColor(Color.BLACK)
+
+                                // Changes suggestion item colors based on Settings - AF
+                                suggestionItem.setTextColor(ThemeManager.primaryText(activity))
+
                                 suggestionItem.setPadding(16, 12, 16, 12)
-                                suggestionItem.setBackgroundColor(Color.rgb(248, 249, 250))
+
+                                suggestionItem.setBackgroundColor(ThemeManager.sectionBackground(activity))
+
+
 
                                 suggestionItem.setOnClickListener {
 
@@ -691,7 +762,9 @@ class POSPage(private val activity: Activity) {
 
         val rightPanel = LinearLayout(activity)
         rightPanel.orientation = LinearLayout.VERTICAL
-        rightPanel.setBackgroundColor(Color.rgb(235, 239, 245))
+
+        // Changes payment panel background based on Settings - AF
+        rightPanel.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         val rightParams = LinearLayout.LayoutParams(
             0,
@@ -708,7 +781,10 @@ class POSPage(private val activity: Activity) {
         val rightText = TextView(activity)
         rightText.text = "Payment Panel"
         rightText.textSize = 22f
-        rightText.setTextColor(Color.BLACK)
+
+        // Changes payment panel title color based on Settings - AF
+        rightText.setTextColor(ThemeManager.primaryText(activity))
+
         rightText.setPadding(30, 30, 30, 30)
 
         rightPanel.setPadding(18, 8, 18, 8)
@@ -717,26 +793,35 @@ class POSPage(private val activity: Activity) {
         val remainingBalanceLabel = TextView(activity)
         remainingBalanceLabel.text = "Remaining Balance"
         remainingBalanceLabel.textSize = 14f
-        remainingBalanceLabel.setTextColor(Color.GRAY)
+
+        // Changes remaining balance label color based on Settings - AF
+        remainingBalanceLabel.setTextColor(ThemeManager.mutedText(activity))
 
         remainingBalanceAmount = TextView(activity)
         remainingBalanceAmount.text = "$${"%.2f".format(remainingBalance)}"
         remainingBalanceAmount.textSize = 34f
-        remainingBalanceAmount.setTextColor(Color.BLACK)
+
+        // Changes remaining balance amount color based on Settings - AF
+        remainingBalanceAmount.setTextColor(ThemeManager.primaryText(activity))
+
         remainingBalanceAmount.setPadding(0, 0, 0, 12)
 
         val paymentAmountLabel = TextView(activity)
         paymentAmountLabel.text = "Payment Amount"
         paymentAmountLabel.textSize = 14f
-        paymentAmountLabel.setTextColor(Color.GRAY)
+
+        // Changes payment amount label color based on Settings - AF
+        paymentAmountLabel.setTextColor(ThemeManager.mutedText(activity))
 
         paymentAmountBox = EditText(activity)
         paymentAmountBox.hint = "Enter amount"
         paymentAmountBox.textSize = 18f
         paymentAmountBox.setSingleLine(true)
-        paymentAmountBox.setTextColor(Color.BLACK)
-        paymentAmountBox.setHintTextColor(Color.DKGRAY)
-        paymentAmountBox.setBackgroundColor(Color.WHITE)
+
+        // Changes payment amount box colors based on Settings - AF
+        paymentAmountBox.setTextColor(ThemeManager.primaryText(activity))
+        paymentAmountBox.setHintTextColor(ThemeManager.secondaryText(activity))
+        paymentAmountBox.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         rightPanel.addView(remainingBalanceLabel)
         rightPanel.addView(remainingBalanceAmount)
@@ -760,21 +845,27 @@ class POSPage(private val activity: Activity) {
         fiveButton.text = "$5"
         fiveButton.textSize = 13f
         fiveButton.gravity = android.view.Gravity.CENTER
-        fiveButton.setTextColor(Color.rgb(34, 120, 60))
+
+        fiveButton.setTextColor(ThemeManager.positive(activity))
+
         fiveButton.setPadding(0, 14, 0, 14)
 
         val tenButton = TextView(activity)
         tenButton.text = "$10"
         tenButton.textSize = 13f
         tenButton.gravity = android.view.Gravity.CENTER
-        tenButton.setTextColor(Color.rgb(34, 120, 60))
+
+        tenButton.setTextColor(ThemeManager.positive(activity))
+
         tenButton.setPadding(0, 14, 0, 14)
 
         val twentyButton = TextView(activity)
         twentyButton.text = "$20"
         twentyButton.textSize = 13f
         twentyButton.gravity = android.view.Gravity.CENTER
-        twentyButton.setTextColor(Color.rgb(34, 120, 60))
+
+        twentyButton.setTextColor(ThemeManager.positive(activity))
+
         twentyButton.setPadding(0, 14, 0, 14)
 
         val cashRow2 = LinearLayout(activity)
@@ -784,21 +875,27 @@ class POSPage(private val activity: Activity) {
         fiftyButton.text = "$50"
         fiftyButton.textSize = 13f
         fiftyButton.gravity = android.view.Gravity.CENTER
-        fiftyButton.setTextColor(Color.rgb(34, 120, 60))
+
+        fiftyButton.setTextColor(ThemeManager.positive(activity))
+
         fiftyButton.setPadding(0, 14, 0, 14)
 
         val hundredButton = TextView(activity)
         hundredButton.text = "$100"
         hundredButton.textSize = 13f
         hundredButton.gravity = android.view.Gravity.CENTER
-        hundredButton.setTextColor(Color.rgb(34, 120, 60))
+
+        hundredButton.setTextColor(ThemeManager.positive(activity))
+
         hundredButton.setPadding(0, 14, 0, 14)
 
         val exactButton = TextView(activity)
         exactButton.text = "FULL"
         exactButton.textSize = 13f
         exactButton.gravity = android.view.Gravity.CENTER
-        exactButton.setTextColor(Color.rgb(34, 120, 60))
+
+        exactButton.setTextColor(ThemeManager.positive(activity))
+
         exactButton.setPadding(0, 14, 0, 14)
 
         val cashButtonParams = LinearLayout.LayoutParams(
@@ -817,12 +914,13 @@ class POSPage(private val activity: Activity) {
         cashRow2.addView(hundredButton, cashButtonParams)
         cashRow2.addView(exactButton, cashButtonParams)
 
-        fiveButton.setBackgroundColor(Color.rgb(220, 245, 228))
-        tenButton.setBackgroundColor(Color.rgb(220, 245, 228))
-        twentyButton.setBackgroundColor(Color.rgb(220, 245, 228))
-        fiftyButton.setBackgroundColor(Color.rgb(220, 245, 228))
-        hundredButton.setBackgroundColor(Color.rgb(220, 245, 228))
-        exactButton.setBackgroundColor(Color.rgb(220, 245, 228))
+        // Changes quick cash button backgrounds based on Settings - AF
+        fiveButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+        tenButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+        twentyButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+        fiftyButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+        hundredButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+        exactButton.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         cashButtonsGrid.addView(cashRow1)
         cashButtonsGrid.addView(cashRow2)
@@ -854,24 +952,30 @@ class POSPage(private val activity: Activity) {
         button1.text = "1"
         button1.textSize = 16f
         button1.gravity = android.view.Gravity.CENTER
-        button1.setTextColor(Color.rgb(33, 37, 41))
-        button1.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button1.setTextColor(ThemeManager.primaryText(activity))
+        button1.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button1.setPadding(0, 18, 0, 18)
 
         val button2 = TextView(activity)
         button2.text = "2"
         button2.textSize = 16f
         button2.gravity = android.view.Gravity.CENTER
-        button2.setTextColor(Color.rgb(33, 37, 41))
-        button2.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button2.setTextColor(ThemeManager.primaryText(activity))
+        button2.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button2.setPadding(0, 18, 0, 18)
 
         val button3 = TextView(activity)
         button3.text = "3"
         button3.textSize = 16f
         button3.gravity = android.view.Gravity.CENTER
-        button3.setTextColor(Color.rgb(33, 37, 41))
-        button3.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button3.setTextColor(ThemeManager.primaryText(activity))
+        button3.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button3.setPadding(0, 18, 0, 18)
 
         keypadRow1.addView(button1, keypadButtonParams)
@@ -885,24 +989,30 @@ class POSPage(private val activity: Activity) {
         button4.text = "4"
         button4.textSize = 16f
         button4.gravity = android.view.Gravity.CENTER
-        button4.setTextColor(Color.rgb(33, 37, 41))
-        button4.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button4.setTextColor(ThemeManager.primaryText(activity))
+        button4.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button4.setPadding(0, 18, 0, 18)
 
         val button5 = TextView(activity)
         button5.text = "5"
         button5.textSize = 16f
         button5.gravity = android.view.Gravity.CENTER
-        button5.setTextColor(Color.rgb(33, 37, 41))
-        button5.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button5.setTextColor(ThemeManager.primaryText(activity))
+        button5.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button5.setPadding(0, 18, 0, 18)
 
         val button6 = TextView(activity)
         button6.text = "6"
         button6.textSize = 16f
         button6.gravity = android.view.Gravity.CENTER
-        button6.setTextColor(Color.rgb(33, 37, 41))
-        button6.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button6.setTextColor(ThemeManager.primaryText(activity))
+        button6.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button6.setPadding(0, 18, 0, 18)
 
         keypadRow2.addView(button4, keypadButtonParams)
@@ -916,24 +1026,30 @@ class POSPage(private val activity: Activity) {
         button7.text = "7"
         button7.textSize = 16f
         button7.gravity = android.view.Gravity.CENTER
-        button7.setTextColor(Color.rgb(33, 37, 41))
-        button7.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button7.setTextColor(ThemeManager.primaryText(activity))
+        button7.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button7.setPadding(0, 18, 0, 18)
 
         val button8 = TextView(activity)
         button8.text = "8"
         button8.textSize = 16f
         button8.gravity = android.view.Gravity.CENTER
-        button8.setTextColor(Color.rgb(33, 37, 41))
-        button8.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button8.setTextColor(ThemeManager.primaryText(activity))
+        button8.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button8.setPadding(0, 18, 0, 18)
 
         val button9 = TextView(activity)
         button9.text = "9"
         button9.textSize = 16f
         button9.gravity = android.view.Gravity.CENTER
-        button9.setTextColor(Color.rgb(33, 37, 41))
-        button9.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button9.setTextColor(ThemeManager.primaryText(activity))
+
+        button9.setBackgroundColor(ThemeManager.inputBackground(activity))
         button9.setPadding(0, 18, 0, 18)
 
         keypadRow3.addView(button7, keypadButtonParams)
@@ -947,24 +1063,30 @@ class POSPage(private val activity: Activity) {
         decimalButton.text = "."
         decimalButton.textSize = 16f
         decimalButton.gravity = android.view.Gravity.CENTER
-        decimalButton.setTextColor(Color.rgb(33, 37, 41))
-        decimalButton.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        decimalButton.setTextColor(ThemeManager.primaryText(activity))
+        decimalButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         decimalButton.setPadding(0, 18, 0, 18)
 
         val button0 = TextView(activity)
         button0.text = "0"
         button0.textSize = 16f
         button0.gravity = android.view.Gravity.CENTER
-        button0.setTextColor(Color.rgb(33, 37, 41))
-        button0.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        button0.setTextColor(ThemeManager.primaryText(activity))
+        button0.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         button0.setPadding(0, 18, 0, 18)
 
         val backspaceButton = TextView(activity)
         backspaceButton.text = "⌫"
         backspaceButton.textSize = 16f
         backspaceButton.gravity = android.view.Gravity.CENTER
-        backspaceButton.setTextColor(Color.rgb(180, 60, 50))
-        backspaceButton.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        backspaceButton.setTextColor(ThemeManager.negative(activity))
+        backspaceButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         backspaceButton.setPadding(0, 18, 0, 18)
 
         keypadRow4.addView(decimalButton, keypadButtonParams)
@@ -983,7 +1105,10 @@ class POSPage(private val activity: Activity) {
         clearAmountButton.textSize = 13f
         clearAmountButton.gravity = android.view.Gravity.CENTER
         clearAmountButton.setTextColor(Color.WHITE)
-        clearAmountButton.setBackgroundColor(Color.rgb(230, 149, 62))
+
+        // Changes clear amount button color based on Settings - AF
+        clearAmountButton.setBackgroundColor(ThemeManager.warning(activity))
+
         clearAmountButton.setPadding(0, 16, 0, 16)
 
         val applyPaymentButton = TextView(activity)
@@ -991,7 +1116,10 @@ class POSPage(private val activity: Activity) {
         applyPaymentButton.textSize = 13f
         applyPaymentButton.gravity = android.view.Gravity.CENTER
         applyPaymentButton.setTextColor(Color.WHITE)
-        applyPaymentButton.setBackgroundColor(Color.rgb(76, 175, 80))
+
+        // Changes apply payment button color based on Settings - AF
+        applyPaymentButton.setBackgroundColor(ThemeManager.positive(activity))
+
         applyPaymentButton.setPadding(0, 16, 0, 16)
 
         val completeSaleButton = TextView(activity)
@@ -999,15 +1127,21 @@ class POSPage(private val activity: Activity) {
         completeSaleButton.textSize = 13f
         completeSaleButton.gravity = android.view.Gravity.CENTER
         completeSaleButton.setTextColor(Color.WHITE)
-        completeSaleButton.setBackgroundColor(Color.rgb(211, 47, 47))
+
+        // Changes complete sale button color based on Settings - AF
+        completeSaleButton.setBackgroundColor(ThemeManager.negative(activity))
+
         completeSaleButton.setPadding(0, 16, 0, 16)
 
         val cancelTransactionButton = TextView(activity)
         cancelTransactionButton.text = "Cancel"
         cancelTransactionButton.textSize = 13f
         cancelTransactionButton.gravity = android.view.Gravity.CENTER
-        cancelTransactionButton.setTextColor(Color.rgb(80, 80, 80))
-        cancelTransactionButton.setBackgroundColor(Color.rgb(235, 235, 235))
+
+        // Changes cancel button colors based on Settings - AF
+        cancelTransactionButton.setTextColor(ThemeManager.secondaryText(activity))
+        cancelTransactionButton.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         cancelTransactionButton.setPadding(0, 16, 0, 16)
 
         val actionCellParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
