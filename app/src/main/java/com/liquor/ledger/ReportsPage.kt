@@ -260,44 +260,32 @@ class ReportsPage(private val activity: Activity) {
      * Main page background.
      */
     private fun getPageBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(38, 38, 38)
-        } else {
-            Color.WHITE
-        }
+        // Uses ThemeManager so page backgrounds follow Light or Dark Mode - AF
+        return ThemeManager.pageBackground(activity)
     }
 
     /*
      * Summary card background.
      */
     private fun getCardBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(48, 48, 48)
-        } else {
-            Color.rgb(245, 247, 250)
-        }
+        // Uses ThemeManager so card backgrounds follow Light or Dark Mode - AF
+        return ThemeManager.sectionBackground(activity)
     }
 
     /*
      * Main title text color.
      */
     private fun getPrimaryTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.WHITE
-        } else {
-            Color.BLACK
-        }
+        // Uses ThemeManager so primary text follows Light or Dark Mode - AF
+        return ThemeManager.primaryText(activity)
     }
 
     /*
      * Description / secondary text color.
      */
     private fun getSecondaryTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.LTGRAY
-        } else {
-            Color.DKGRAY
-        }
+        // Uses ThemeManager so secondary text follows Light or Dark Mode - AF
+        return ThemeManager.secondaryText(activity)
     }
 
     /*
@@ -306,11 +294,8 @@ class ReportsPage(private val activity: Activity) {
      * In Colorblind Mode, use accessible blue.
      */
     private fun getPrimaryActionColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(0, 114, 178)
-        } else {
-            Color.rgb(45, 95, 255)
-        }
+        // Uses ThemeManager so action colors support Colorblind Mode - AF
+        return ThemeManager.primaryAction(activity)
     }
 
     /*
@@ -321,11 +306,8 @@ class ReportsPage(private val activity: Activity) {
      * to rely on green/red differences.
      */
     private fun getPositiveColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(0, 114, 178)
-        } else {
-            Color.rgb(20, 180, 120)
-        }
+        // Uses ThemeManager so positive colors support Colorblind Mode - AF
+        return ThemeManager.positive(activity)
     }
 
     /*
@@ -334,11 +316,8 @@ class ReportsPage(private val activity: Activity) {
      * In Colorblind Mode, use orange-red instead of pure red.
      */
     private fun getNegativeColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(213, 94, 0)
-        } else {
-            Color.RED
-        }
+        // Uses ThemeManager so negative colors support Colorblind Mode - AF
+        return ThemeManager.negative(activity)
     }
     private fun loadSalesData(filter: String) {
 
