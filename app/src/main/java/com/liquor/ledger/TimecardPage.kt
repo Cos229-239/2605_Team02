@@ -71,7 +71,9 @@ class TimecardPage(private val activity: Activity) {
 
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
-        page.setBackgroundColor(Color.WHITE)
+
+        // Changes page background based on Settings - AF
+        page.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         // TOP SECTION — employee selector for managers
         if (isManager) {
@@ -79,12 +81,16 @@ class TimecardPage(private val activity: Activity) {
             selectorRow.orientation = LinearLayout.HORIZONTAL
             selectorRow.gravity = Gravity.CENTER_VERTICAL
             selectorRow.setPadding(dp(16), dp(12), dp(16), dp(12))
-            selectorRow.setBackgroundColor(Color.rgb(248, 249, 250))
+
+            // Changes selector row background based on Settings - AF
+            selectorRow.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
             val selectorLabel = TextView(activity)
             selectorLabel.text = "Viewing: "
             selectorLabel.textSize = 14f
-            selectorLabel.setTextColor(Color.rgb(55, 65, 81))
+
+            // Changes selector label color based on Settings - AF
+            selectorLabel.setTextColor(ThemeManager.secondaryText(activity))
 
             val employeeSpinner = Spinner(activity)
             val spinnerParams = LinearLayout.LayoutParams(
@@ -116,7 +122,10 @@ class TimecardPage(private val activity: Activity) {
 
         weekRangeLabel = TextView(activity)
         weekRangeLabel.textSize = 15f
-        weekRangeLabel.setTextColor(Color.BLACK)
+
+        // Changes week range text color based on Settings - AF
+        weekRangeLabel.setTextColor(ThemeManager.primaryText(activity))
+
         weekRangeLabel.setTypeface(null, Typeface.BOLD)
         weekRangeLabel.gravity = Gravity.CENTER
         weekRangeLabel.layoutParams = LinearLayout.LayoutParams(
@@ -137,7 +146,10 @@ class TimecardPage(private val activity: Activity) {
         totalHoursLabel = TextView(activity)
         totalHoursLabel.text = "Total Hours This Week: 0.00 hrs"
         totalHoursLabel.textSize = 14f
-        totalHoursLabel.setTextColor(Color.rgb(45, 95, 255))
+
+        // Changes total hours text color based on Settings - AF
+        totalHoursLabel.setTextColor(ThemeManager.primaryAction(activity))
+
         totalHoursLabel.setTypeface(null, Typeface.BOLD)
         totalHoursLabel.setPadding(dp(16), dp(8), dp(16), dp(8))
         totalHoursLabel.gravity = Gravity.END
@@ -148,6 +160,10 @@ class TimecardPage(private val activity: Activity) {
 
         // SCROLLABLE TIMESHEET
         val scrollView = ScrollView(activity)
+
+        // Changes scroll background based on Settings - AF
+        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         val scrollParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             0,
@@ -156,6 +172,10 @@ class TimecardPage(private val activity: Activity) {
 
         timesheetContainer = LinearLayout(activity)
         timesheetContainer.orientation = LinearLayout.VERTICAL
+
+        // Changes timesheet container background based on Settings - AF
+        timesheetContainer.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         scrollView.addView(timesheetContainer)
         page.addView(scrollView, scrollParams)
 
@@ -166,7 +186,10 @@ class TimecardPage(private val activity: Activity) {
             reportsBtn.textSize = 14f
             reportsBtn.gravity = Gravity.CENTER
             reportsBtn.setTextColor(Color.WHITE)
-            reportsBtn.setBackgroundColor(Color.rgb(45, 95, 255))
+
+            // Changes reports button color based on Settings - AF
+            reportsBtn.setBackgroundColor(ThemeManager.primaryAction(activity))
+
             reportsBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
 
             val reportsBtnParams = LinearLayout.LayoutParams(
@@ -196,17 +219,21 @@ class TimecardPage(private val activity: Activity) {
         val buttonRow = LinearLayout(activity)
         buttonRow.orientation = LinearLayout.HORIZONTAL
         buttonRow.setPadding(dp(16), dp(12), dp(16), dp(12))
-        buttonRow.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        // Changes button row background based on Settings - AF
+        buttonRow.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         val buttonParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
 
-        clockInBtn = makeClockButton("Clock In", Color.rgb(34, 197, 94))
+        clockInBtn = makeClockButton("Clock In", ThemeManager.positive(activity))
+
         clockInBtn.setOnClickListener { clockIn() }
 
-        clockOutBtn = makeClockButton("Clock Out", Color.rgb(239, 68, 68))
+        clockOutBtn = makeClockButton("Clock Out", ThemeManager.negative(activity))
+
         clockOutBtn.setOnClickListener {
             AlertDialog.Builder(activity)
                 .setTitle("Clock Out?")
@@ -216,7 +243,8 @@ class TimecardPage(private val activity: Activity) {
                 .show()
         }
 
-        breakBtn = makeClockButton("Break Out", Color.rgb(245, 158, 11))
+        breakBtn = makeClockButton("Break Out", ThemeManager.warning(activity))
+
         breakBtn.setOnClickListener { toggleBreak() }
 
         buttonRow.addView(clockInBtn)
@@ -303,7 +331,10 @@ class TimecardPage(private val activity: Activity) {
         val loadingText = TextView(activity)
         loadingText.text = "Loading..."
         loadingText.textSize = 14f
-        loadingText.setTextColor(Color.GRAY)
+
+        // Changes loading text color based on Settings - AF
+        loadingText.setTextColor(ThemeManager.mutedText(activity))
+
         loadingText.setPadding(dp(16), dp(16), dp(16), dp(16))
         timesheetContainer.addView(loadingText)
 
@@ -375,7 +406,10 @@ class TimecardPage(private val activity: Activity) {
 
                         // Divider
                         val divider = android.view.View(activity)
-                        divider.setBackgroundColor(Color.rgb(229, 231, 235))
+
+                        // Changes divider color based on Settings - AF
+                        divider.setBackgroundColor(ThemeManager.divider(activity))
+
                         timesheetContainer.addView(
                             divider,
                             LinearLayout.LayoutParams(
@@ -396,7 +430,10 @@ class TimecardPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error loading timesheet: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+
+                    // Changes error text color based on Settings - AF
+                    errorText.setTextColor(ThemeManager.negative(activity))
+
                     errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
                     timesheetContainer.addView(errorText)
                 }
@@ -415,6 +452,9 @@ class TimecardPage(private val activity: Activity) {
         row.orientation = LinearLayout.HORIZONTAL
         row.setPadding(dp(16), dp(12), dp(16), dp(12))
         row.gravity = Gravity.CENTER_VERTICAL
+
+        // Changes row background based on Settings - AF
+        row.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
@@ -436,10 +476,11 @@ class TimecardPage(private val activity: Activity) {
             else -> "Day Off"
         }
 
+        // Changes status colors based on Settings - AF
         val statusColor = when (displayStatus) {
-            "Completed" -> Color.rgb(34, 197, 94)
-            "In Progress" -> Color.rgb(45, 95, 255)
-            else -> Color.GRAY
+            "Completed" -> ThemeManager.positive(activity)
+            "In Progress" -> ThemeManager.primaryAction(activity)
+            else -> ThemeManager.mutedText(activity)
         }
 
         row.addView(makeRowCell(date, 2f))
@@ -633,7 +674,10 @@ class TimecardPage(private val activity: Activity) {
 
                     withContext(Dispatchers.Main) {
                         breakBtn.text = "Break In"
-                        breakBtn.setBackgroundColor(Color.rgb(34, 197, 94))
+
+                        // Changes break out button color based on Settings - AF
+                        breakBtn.setBackgroundColor(ThemeManager.warning(activity))
+
                         android.widget.Toast.makeText(
                             activity,
                             "Break started",
@@ -671,7 +715,10 @@ class TimecardPage(private val activity: Activity) {
 
                     withContext(Dispatchers.Main) {
                         breakBtn.text = "Break Out"
-                        breakBtn.setBackgroundColor(Color.rgb(245, 158, 11))
+
+                        // Changes break out button color based on Settings - AF
+                        breakBtn.setBackgroundColor(ThemeManager.warning(activity))
+
                         android.widget.Toast.makeText(
                             activity,
                             "Break ended. Total break: ${newBreakMinutes} min",
@@ -881,8 +928,8 @@ class TimecardPage(private val activity: Activity) {
 
         breakBtn.text = if (onBreak) "Break In" else "Break Out"
         breakBtn.setBackgroundColor(
-            if (onBreak) Color.rgb(34, 197, 94)
-            else Color.rgb(245, 158, 11)
+            if (onBreak) ThemeManager.positive(activity)
+            else ThemeManager.warning(activity)
         )
     }
 
@@ -917,7 +964,9 @@ class TimecardPage(private val activity: Activity) {
         val header = LinearLayout(activity)
         header.orientation = LinearLayout.HORIZONTAL
         header.setPadding(dp(16), dp(10), dp(16), dp(10))
-        header.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        // Changes table header background based on Settings - AF
+        header.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         listOf(
             Pair("Date", 2f),
@@ -931,7 +980,10 @@ class TimecardPage(private val activity: Activity) {
             val cell = TextView(activity)
             cell.text = text
             cell.textSize = 12f
-            cell.setTextColor(Color.rgb(107, 114, 128))
+
+            // Changes table header text color based on Settings - AF
+            cell.setTextColor(ThemeManager.mutedText(activity))
+
             cell.setTypeface(null, Typeface.BOLD)
             cell.layoutParams = LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
@@ -946,7 +998,10 @@ class TimecardPage(private val activity: Activity) {
         val cell = TextView(activity)
         cell.text = text
         cell.textSize = 13f
-        cell.setTextColor(Color.rgb(55, 65, 81))
+
+        // Changes row cell text color based on Settings - AF
+        cell.setTextColor(ThemeManager.secondaryText(activity))
+
         cell.layoutParams = LinearLayout.LayoutParams(
             0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
         return cell
@@ -975,7 +1030,10 @@ class TimecardPage(private val activity: Activity) {
         btn.text = text
         btn.textSize = 14f
         btn.gravity = Gravity.CENTER
-        btn.setTextColor(Color.rgb(45, 95, 255))
+
+        // Changes week nav button color based on Settings - AF
+        btn.setTextColor(ThemeManager.primaryAction(activity))
+
         btn.setPadding(dp(12), dp(8), dp(12), dp(8))
         btn.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -988,7 +1046,10 @@ class TimecardPage(private val activity: Activity) {
         val label = TextView(activity)
         label.text = text
         label.textSize = 13f
-        label.setTextColor(Color.GRAY)
+
+        // Changes dialog label color based on Settings - AF
+        label.setTextColor(ThemeManager.mutedText(activity))
+
         label.setPadding(0, dp(8), 0, dp(2))
         return label
     }
@@ -998,9 +1059,13 @@ class TimecardPage(private val activity: Activity) {
         val input = android.widget.EditText(activity)
         input.setText(defaultValue)
         input.textSize = 14f
-        input.setTextColor(Color.BLACK)
+
+        // Changes dialog input colors based on Settings - AF
+        input.setTextColor(ThemeManager.primaryText(activity))
+
         input.setPadding(dp(8), dp(8), dp(8), dp(8))
-        input.setBackgroundColor(Color.rgb(243, 244, 246))
+
+        input.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,

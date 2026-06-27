@@ -19,20 +19,28 @@ class InventoryAlertPage(private val activity: Activity) {
 
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
-        root.setBackgroundColor(Color.WHITE)
+
+        // Changes main page background based on Settings - AF
+        root.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         root.setPadding(40, 40, 40, 40)
 
 
         val title = TextView(activity)
         title.text = "Inventory Alert Report"
         title.textSize = 28f
-        title.setTextColor(Color.BLACK)
+
+        // Changes title color based on Settings - AF
+        title.setTextColor(ThemeManager.primaryText(activity))
 
 
         val subtitle = TextView(activity)
         subtitle.text = "Products with 10 or fewer units in stock"
         subtitle.textSize = 18f
-        subtitle.setTextColor(Color.DKGRAY)
+
+        // Changes subtitle color based on Settings - AF
+        subtitle.setTextColor(ThemeManager.secondaryText(activity))
+
         subtitle.setPadding(0, 15, 0, 30)
 
         val summaryRow = LinearLayout(activity)
@@ -54,8 +62,12 @@ class InventoryAlertPage(private val activity: Activity) {
         exportAlertsButton.text = "Export Alerts"
         exportAlertsButton.textSize = 16f
         exportAlertsButton.gravity = Gravity.CENTER
+
         exportAlertsButton.setTextColor(Color.WHITE)
-        exportAlertsButton.setBackgroundColor(Color.rgb(20, 180, 120))
+
+        // Changes export button color based on Settings - AF
+        exportAlertsButton.setBackgroundColor(ThemeManager.positive(activity))
+
         exportAlertsButton.setPadding(0, 16, 0, 16)
 
         val createPoButton = TextView(activity)
@@ -63,7 +75,10 @@ class InventoryAlertPage(private val activity: Activity) {
         createPoButton.textSize = 16f
         createPoButton.gravity = Gravity.CENTER
         createPoButton.setTextColor(Color.WHITE)
-        createPoButton.setBackgroundColor(Color.rgb(45, 95, 255))
+
+        // Changes purchase order button color based on Settings - AF
+        createPoButton.setBackgroundColor(ThemeManager.primaryAction(activity))
+
         createPoButton.setPadding(0, 16, 0, 16)
 
         val actionButtonParams = LinearLayout.LayoutParams(
@@ -83,10 +98,14 @@ class InventoryAlertPage(private val activity: Activity) {
 
         val scrollView = ScrollView(activity)
 
+        // Changes scroll area background based on Settings - AF
+        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val content = LinearLayout(activity)
         content.orientation = LinearLayout.VERTICAL
 
+        // Changes alert content background based on Settings - AF
+        content.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         scrollView.addView(content)
 
@@ -111,8 +130,9 @@ class InventoryAlertPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error loading inventory alerts: ${error.message}"
                     errorText.textSize = 18f
-                    errorText.setTextColor(Color.RED)
 
+                    // Changes error text color based on Settings - AF
+                    errorText.setTextColor(ThemeManager.negative(activity))
 
                     content.addView(errorText)
                     return@addSnapshotListener
@@ -125,8 +145,9 @@ class InventoryAlertPage(private val activity: Activity) {
                     val emptyText = TextView(activity)
                     emptyText.text = "No products found."
                     emptyText.textSize = 18f
-                    emptyText.setTextColor(Color.DKGRAY)
 
+                    // Changes empty text color based on Settings - AF
+                    emptyText.setTextColor(ThemeManager.secondaryText(activity))
 
                     content.addView(emptyText)
                     return@addSnapshotListener
@@ -172,14 +193,17 @@ class InventoryAlertPage(private val activity: Activity) {
                         }
 
                         val stockStatusColor = when {
-                            stock <= 0 -> Color.rgb(211, 47, 47)
-                            stock <= 5 -> Color.rgb(230, 149, 62)
-                            else -> Color.rgb(245, 190, 65)
+                            stock <= 0 -> ThemeManager.negative(activity)
+                            stock <= 5 -> ThemeManager.warning(activity)
+                            else -> ThemeManager.warning(activity)
                         }
 
                         val alertCard = LinearLayout(activity)
                         alertCard.orientation = LinearLayout.VERTICAL
-                        alertCard.setBackgroundColor(Color.rgb(245, 247, 250))
+
+                        // Changes alert card background based on Settings - AF
+                        alertCard.setBackgroundColor(ThemeManager.sectionBackground(activity))
+
                         alertCard.setPadding(24, 24, 24, 24)
 
                         val cardParams = LinearLayout.LayoutParams(
@@ -192,7 +216,9 @@ class InventoryAlertPage(private val activity: Activity) {
                         val nameText = TextView(activity)
                         nameText.text = name
                         nameText.textSize = 20f
-                        nameText.setTextColor(Color.BLACK)
+
+                        // Changes product name color based on Settings - AF
+                        nameText.setTextColor(ThemeManager.primaryText(activity))
 
                         val statusText = TextView(activity)
                         statusText.text = stockStatusText
@@ -211,7 +237,9 @@ class InventoryAlertPage(private val activity: Activity) {
                             """.trimIndent()
 
                         detailsText.textSize = 16f
-                        detailsText.setTextColor(Color.DKGRAY)
+
+                        // Changes product details color based on Settings - AF
+                        detailsText.setTextColor(ThemeManager.secondaryText(activity))
 
                         alertCard.addView(statusText)
                         alertCard.addView(nameText)
@@ -237,7 +265,8 @@ class InventoryAlertPage(private val activity: Activity) {
 
 
                     noAlerts.textSize = 18f
-                    noAlerts.setTextColor(Color.DKGRAY)
+
+                    noAlerts.setTextColor(ThemeManager.secondaryText(activity))
 
 
                     content.addView(noAlerts)
@@ -252,9 +281,15 @@ class InventoryAlertPage(private val activity: Activity) {
         val card = TextView(activity)
         card.text = "$label\n$value"
         card.textSize = 18f
-        card.setTextColor(Color.BLACK)
+
+        // Changes summary card text color based on Settings - AF
+        card.setTextColor(ThemeManager.primaryText(activity))
+
         card.gravity = Gravity.CENTER
-        card.setBackgroundColor(Color.rgb(245, 247, 250))
+
+        // Changes summary card background based on Settings - AF
+        card.setBackgroundColor(ThemeManager.sectionBackground(activity))
+
         card.setPadding(20, 20, 20, 20)
 
         val params = LinearLayout.LayoutParams(

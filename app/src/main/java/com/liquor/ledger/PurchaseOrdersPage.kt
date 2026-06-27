@@ -502,7 +502,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
                             detailPanel.addView(
                                 makeActionButton(
                                     "Submit Order",
-                                    Color.rgb(45, 95, 255)
+                                    getPrimaryActionColor()
                                 ) {
                                     updatePOStatus(order["docId"] ?: "", "submitted")
                                 }
@@ -510,7 +510,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
                         detailPanel.addView(
                             makeActionButton(
                                 "Delete Order",
-                                Color.rgb(239, 68, 68)
+                                getNegativeColor()
                             ) {
                                 confirmDeletePO(order["docId"] ?: "", order["poNumber"] ?: "")
                             }
@@ -575,7 +575,10 @@ class PurchaseOrdersPage(private val activity: Activity) {
                             selectText.text = "Select an order to view details"
                             selectText.textSize = 16f
                             selectText.setTextColor(Color.GRAY)
-                            selectText.gravity = Gravity.CENTER
+
+                            // Uses ThemeManager so select text follows Light or Dark Mode - AF
+                            selectText.setTextColor(getMutedTextColor())
+
                             detailPanel.addView(selectText)
                             loadPurchaseOrders()
                         }
@@ -609,14 +612,20 @@ class PurchaseOrdersPage(private val activity: Activity) {
         val title = TextView(activity)
         title.text = "Receiving Checklist"
         title.textSize = 20f
-        title.setTextColor(Color.BLACK)
+
+        // Uses ThemeManager so checklist title follows Light or Dark Mode - AF
+        title.setTextColor(getPrimaryTextColor())
+
         title.setTypeface(null, Typeface.BOLD)
         title.setPadding(0, 0, 0, dp(4))
 
         val subtitle = TextView(activity)
         subtitle.text = "Confirm quantity actually received for each item"
         subtitle.textSize = 13f
-        subtitle.setTextColor(Color.GRAY)
+
+        // Uses ThemeManager so checklist subtitle follows Light or Dark Mode - AF
+        subtitle.setTextColor(getMutedTextColor())
+
         subtitle.setPadding(0, 0, 0, dp(16))
 
         container.addView(title)
@@ -632,7 +641,10 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
             val itemBlock = LinearLayout(activity)
             itemBlock.orientation = LinearLayout.VERTICAL
-            itemBlock.setBackgroundColor(Color.rgb(248, 249, 250))
+
+            // Uses ThemeManager so item blocks follow Light or Dark Mode - AF
+            itemBlock.setBackgroundColor(getSectionBackgroundColor())
+
             itemBlock.setPadding(dp(12), dp(12), dp(12), dp(12))
 
             val itemBlockParams = LinearLayout.LayoutParams(
@@ -645,27 +657,41 @@ class PurchaseOrdersPage(private val activity: Activity) {
             val nameText = TextView(activity)
             nameText.text = productName
             nameText.textSize = 14f
-            nameText.setTextColor(Color.BLACK)
+
+            // Uses ThemeManager so item names follow Light or Dark Mode - AF
+            nameText.setTextColor(getPrimaryTextColor())
+
             nameText.setTypeface(null, Typeface.BOLD)
 
             val orderedText = TextView(activity)
             orderedText.text = "Ordered: $orderedQty"
             orderedText.textSize = 12f
-            orderedText.setTextColor(Color.GRAY)
+
+            // Uses ThemeManager so ordered quantity text follows Light or Dark Mode - AF
+            orderedText.setTextColor(getMutedTextColor())
+
             orderedText.setPadding(0, dp(2), 0, dp(6))
 
             val receivedLabel = TextView(activity)
             receivedLabel.text = "Quantity Received"
             receivedLabel.textSize = 12f
-            receivedLabel.setTextColor(Color.rgb(55, 65, 81))
+
+
+            // Uses ThemeManager so received labels follow Light or Dark Mode - AF
+            receivedLabel.setTextColor(getSecondaryTextColor())
 
             val receivedInput = android.widget.EditText(activity)
             receivedInput.setText(orderedQty.toString())
             receivedInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER
             receivedInput.textSize = 14f
-            receivedInput.setTextColor(Color.BLACK)
+
+            // Uses ThemeManager so received input follows Light or Dark Mode - AF
+            receivedInput.setTextColor(getPrimaryTextColor())
+
             receivedInput.setPadding(dp(8), dp(8), dp(8), dp(8))
-            receivedInput.setBackgroundColor(Color.WHITE)
+
+            // Uses ThemeManager so received input background follows Light or Dark Mode - AF
+            receivedInput.setBackgroundColor(getInputBackgroundColor())
 
             receivedInputs.add(receivedInput)
 
@@ -680,7 +706,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
         // Not Received button — marks everything as zero received, PO stays submitted
         val notReceivedBtn = makeActionButton(
             "Mark Order as Not Received",
-            Color.rgb(239, 68, 68)
+            getNegativeColor()
         ) {
             AlertDialog.Builder(activity)
                 .setTitle("Mark as Not Received?")
@@ -710,7 +736,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
         // Confirm Receipt button — updates inventory based on what was actually entered
         val confirmBtn = makeActionButton(
             "Confirm Receipt & Update Inventory",
-            Color.rgb(34, 197, 94)
+            getPositiveColor()
         ) {
             val receivedItems = items.mapIndexed { index, item ->
                 val productName = item["productName"] as? String ?: ""
@@ -744,7 +770,7 @@ class PurchaseOrdersPage(private val activity: Activity) {
 
         val cancelBtn = makeActionButton(
             "Cancel",
-            Color.rgb(107, 114, 128)
+            getMutedButtonColor()
         ) {
             // Just reload the detail panel without changes
             CoroutineScope(Dispatchers.IO).launch {
@@ -810,7 +836,10 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     val successText = TextView(activity)
                     successText.text = "Order received and inventory updated"
                     successText.textSize = 16f
-                    successText.setTextColor(Color.rgb(34, 197, 94))
+
+                    // Uses ThemeManager so success text supports Colorblind Mode - AF
+                    successText.setTextColor(getPositiveColor())
+
                     successText.setPadding(0, dp(20), 0, 0)
                     detailPanel.addView(successText)
                 }
@@ -820,7 +849,10 @@ class PurchaseOrdersPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error receiving order: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+
+                    // Uses ThemeManager so error text supports Colorblind Mode - AF
+                    errorText.setTextColor(getNegativeColor())
+
                     detailPanel.addView(errorText)
                 }
             }
@@ -1299,95 +1331,63 @@ class PurchaseOrdersPage(private val activity: Activity) {
     }
 
     private fun getPageBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(38, 38, 38)
-        } else {
-            Color.WHITE
-        }
+        // Uses ThemeManager so page backgrounds follow Light or Dark Mode - AF
+        return ThemeManager.pageBackground(activity)
     }
 
     private fun getSectionBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(48, 48, 48)
-        } else {
-            Color.rgb(248, 249, 250)
-        }
+        // Uses ThemeManager so section backgrounds follow Light or Dark Mode - AF
+        return ThemeManager.sectionBackground(activity)
     }
 
     private fun getInputBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(60, 60, 60)
-        } else {
-            Color.rgb(243, 244, 246)
-        }
+        // Uses ThemeManager so input backgrounds follow Light or Dark Mode - AF
+        return ThemeManager.inputBackground(activity)
     }
 
     private fun getPrimaryTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.WHITE
-        } else {
-            Color.BLACK
-        }
+        // Uses ThemeManager so primary text follows Light or Dark Mode - AF
+        return ThemeManager.primaryText(activity)
     }
 
     private fun getSecondaryTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.LTGRAY
-        } else {
-            Color.rgb(55, 65, 81)
-        }
+        // Uses ThemeManager so secondary text follows Light or Dark Mode - AF
+        return ThemeManager.secondaryText(activity)
     }
 
     private fun getMutedTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(180, 180, 180)
-        } else {
-            Color.GRAY
-        }
+        // Uses ThemeManager so muted text follows Light or Dark Mode - AF
+        return ThemeManager.mutedText(activity)
     }
 
     private fun getDividerColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(80, 80, 80)
-        } else {
-            Color.rgb(229, 231, 235)
-        }
+        // Uses ThemeManager so dividers follow Light or Dark Mode - AF
+        return ThemeManager.divider(activity)
     }
 
     private fun getPrimaryActionColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(0, 114, 178)
-        } else {
-            Color.rgb(45, 95, 255)
-        }
+        // Uses ThemeManager so action colors support Colorblind Mode - AF
+        return ThemeManager.primaryAction(activity)
     }
 
     private fun getPositiveColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(0, 114, 178)
-        } else {
-            Color.rgb(34, 197, 94)
-        }
+        // Uses ThemeManager so positive colors support Colorblind Mode - AF
+        return ThemeManager.positive(activity)
     }
 
     private fun getWarningColor(): Int {
-        return Color.rgb(230, 159, 0)
+        // Uses ThemeManager so warning colors are centralized - AF
+        return ThemeManager.warning(activity)
     }
 
     private fun getNegativeColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(213, 94, 0)
-        } else {
-            Color.RED
-        }
+        // Uses ThemeManager so negative colors support Colorblind Mode - AF
+        return ThemeManager.negative(activity)
     }
 
     private fun getMutedButtonColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(90, 90, 90)
-        } else {
-            Color.rgb(107, 114, 128)
-        }
+        // Uses ThemeManager so muted button colors follow Light or Dark Mode - AF
+        return ThemeManager.mutedButton(activity)
     }
 
     // Converts dp to pixels
