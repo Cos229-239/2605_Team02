@@ -330,3 +330,4 @@ class SettingsPage(
         return (value * context.resources.displayMetrics.density).toInt()
     }
 }
+
