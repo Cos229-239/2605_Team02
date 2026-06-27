@@ -33,18 +33,26 @@ class SalesReportPage(private val activity: Activity) {
     fun build(): LinearLayout {
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
-        root.setBackgroundColor(Color.WHITE)
+
+        // Changes root background based on Settings - AF
+        root.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val title = TextView(activity)
         title.text = "Sales Report"
         title.textSize = 28f
         title.setTypeface(null, android.graphics.Typeface.BOLD)
-        title.setTextColor(Color.BLACK)
+
+
+        // Changes title color based on Settings - AF
+        title.setTextColor(ThemeManager.primaryText(activity))
 
         val subtitle = TextView(activity)
         subtitle.text = "Summary of transactions, revenue, and averages."
         subtitle.textSize = 16f
-        subtitle.setTextColor(Color.DKGRAY)
+
+        // Changes subtitle color based on Settings - AF
+        subtitle.setTextColor(ThemeManager.secondaryText(activity))
+
         subtitle.setPadding(0, 10, 0, 30)
 
         filterSpinner = Spinner(activity)
@@ -59,7 +67,10 @@ class SalesReportPage(private val activity: Activity) {
         exportReportBtn.textSize = 15f
         exportReportBtn.gravity = android.view.Gravity.CENTER
         exportReportBtn.setTextColor(Color.WHITE)
-        exportReportBtn.setBackgroundColor(Color.rgb(45, 95, 255))
+
+        // Changes export report button color based on Settings - AF
+        exportReportBtn.setBackgroundColor(ThemeManager.primaryAction(activity))
+
         exportReportBtn.setPadding(24, 20, 24, 20)
         val exportReportParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -72,8 +83,11 @@ class SalesReportPage(private val activity: Activity) {
         exportFullBtn.text = "Full Data Export"
         exportFullBtn.textSize = 15f
         exportFullBtn.gravity = android.view.Gravity.CENTER
-        exportFullBtn.setTextColor(Color.rgb(45, 95, 255))
-        exportFullBtn.setBackgroundColor(Color.rgb(245, 247, 250))
+
+        // Changes full export button colors based on Settings - AF
+        exportFullBtn.setTextColor(ThemeManager.primaryAction(activity))
+        exportFullBtn.setBackgroundColor(ThemeManager.sectionBackground(activity))
+
         exportFullBtn.setPadding(24, 20, 24, 20)
         val exportFullParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -82,10 +96,11 @@ class SalesReportPage(private val activity: Activity) {
         exportFullParams.setMargins(0, 0, 0, 24)
         exportFullBtn.layoutParams = exportFullParams
 
-        totalTransactionsCard = makeSummaryCard("Total Transactions", "0", Color.rgb(45, 95, 255))
-        totalSalesCard = makeSummaryCard("Total Sales", "$0.00", Color.rgb(20, 180, 120))
-        averageSaleCard = makeSummaryCard("Average Sale", "$0.00", Color.rgb(230, 149, 62))
-        filterPeriodCard = makeSummaryCard("Period", "All", Color.rgb(120, 80, 200))
+        // Changes summary card colors based on Settings - AF
+        totalTransactionsCard = makeSummaryCard("Total Transactions", "0", ThemeManager.primaryAction(activity))
+        totalSalesCard = makeSummaryCard("Total Sales", "$0.00", ThemeManager.positive(activity))
+        averageSaleCard = makeSummaryCard("Average Sale", "$0.00", ThemeManager.warning(activity))
+        filterPeriodCard = makeSummaryCard("Period", "All", ThemeManager.primaryAction(activity))
 
         val summaryRow1 = LinearLayout(activity)
         summaryRow1.orientation = LinearLayout.HORIZONTAL
@@ -101,15 +116,24 @@ class SalesReportPage(private val activity: Activity) {
         reportText = TextView(activity)
         reportText.textSize = 16f
         reportText.setTextColor(Color.DKGRAY)
-        reportText.setBackgroundColor(Color.rgb(245, 247, 250))
-        reportText.setPadding(24, 24, 24, 24)
+
+        // Changes report text colors based on Settings - AF
+        reportText.setTextColor(ThemeManager.secondaryText(activity))
+        reportText.setBackgroundColor(ThemeManager.sectionBackground(activity))
+
         reportText.gravity = Gravity.START
 
         val scrollView = ScrollView(activity)
+
+        // Changes scroll background based on Settings - AF
+        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
         page.setPadding(40, 40, 40, 40)
-        page.setBackgroundColor(Color.WHITE)
+
+        // Changes page background based on Settings - AF
+        page.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         page.addView(title)
         page.addView(subtitle)
@@ -233,7 +257,10 @@ class SalesReportPage(private val activity: Activity) {
         card.textSize = 18f
         card.setTextColor(color)
         card.gravity = Gravity.CENTER
-        card.setBackgroundColor(Color.rgb(245, 247, 250))
+
+        // Changes summary card background based on Settings - AF
+        card.setBackgroundColor(ThemeManager.sectionBackground(activity))
+
         card.setPadding(20, 24, 20, 24)
         val params = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         params.setMargins(6, 0, 6, 0)
