@@ -24,11 +24,6 @@ class InventoryPage(private val activity: Activity) {
     // Firestore database instance
     private val db: FirebaseFirestore = FirebaseManager.db
 
-    // Reads saved settings from SettingsPage
-    private val prefs = activity.getSharedPreferences("settings_prefs", Activity.MODE_PRIVATE)
-
-    private val KEY_COLORBLIND_MODE = "colorblind_mode"
-    private val KEY_DARK_MODE = "dark_mode"
 
     // Check if current employee is a manager
     private val isManager = SessionManager.currentEmployee?.position == "Manager"
@@ -51,14 +46,18 @@ class InventoryPage(private val activity: Activity) {
         // ROOT layout — vertical
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
-        page.setBackgroundColor(getPageBackgroundColor())
+
+        // Uses ThemeManager so the page background follows Light or Dark Mode - AF
+        page.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         // TOP BAR — search, filter, and buttons
         val topBar = LinearLayout(activity)
         topBar.orientation = LinearLayout.HORIZONTAL
         topBar.gravity = Gravity.CENTER_VERTICAL
         topBar.setPadding(dp(16), dp(12), dp(16), dp(12))
-        topBar.setBackgroundColor(getPageBackgroundColor())
+
+        // Uses ThemeManager so the top bar background follows the selected theme - AF
+        topBar.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val topBarParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -69,10 +68,14 @@ class InventoryPage(private val activity: Activity) {
         val searchInput = EditText(activity)
         searchInput.hint = "Search products..."
         searchInput.textSize = 14f
-        searchInput.setTextColor(getPrimaryTextColor())
-        searchInput.setHintTextColor(getMutedTextColor())
+
+        // Uses ThemeManager so the search input follows the selected theme - AF
+        searchInput.setTextColor(ThemeManager.primaryText(activity))
+        searchInput.setHintTextColor(ThemeManager.mutedText(activity))
+
         searchInput.setPadding(dp(12), dp(8), dp(12), dp(8))
-        searchInput.setBackgroundColor(getInputBackgroundColor())
+
+        searchInput.setBackgroundColor(ThemeManager.inputBackground(activity))
 
         val searchParams = LinearLayout.LayoutParams(
             0,
@@ -133,10 +136,10 @@ class InventoryPage(private val activity: Activity) {
 
         // Buttons — only show for managers
         if (isManager) {
-            val adjustStockBtn = makeTopButton("Adjust Stock", getPrimaryActionColor())
+            val adjustStockBtn = makeTopButton("Adjust Stock", ThemeManager.primaryAction(activity))
             adjustStockBtn.setOnClickListener { showAdjustStockDialog() }
 
-            val addProductBtn = makeTopButton("+ Add Product", getPositiveColor())
+            val addProductBtn = makeTopButton("+ Add Product", ThemeManager.positive(activity))
             addProductBtn.setOnClickListener { showAddProductDialog() }
 
             topBar.addView(adjustStockBtn)
@@ -147,17 +150,22 @@ class InventoryPage(private val activity: Activity) {
         val statsRow = LinearLayout(activity)
         statsRow.orientation = LinearLayout.HORIZONTAL
         statsRow.setPadding(dp(16), dp(8), dp(16), dp(8))
-        statsRow.setBackgroundColor(getSectionBackgroundColor())
+
+        // Uses ThemeManager so the stats row background follows the selected theme - AF
+        statsRow.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         val statsParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
 
-        totalProductsText = makeStatView("Total Products", "0", getPrimaryTextColor())
-        inventoryValueText = makeStatView("Inventory Value", "$0.00", getLinkColor())
-        lowStockText = makeStatView("Low Stock", "0", getWarningColor())
-        outOfStockText = makeStatView("Out of Stock", "0", getNegativeColor())
+        totalProductsText = makeStatView("Total Products", "0", ThemeManager.primaryText(activity))
+
+        inventoryValueText = makeStatView("Inventory Value", "$0.00", ThemeManager.primaryAction(activity))
+
+        lowStockText = makeStatView("Low Stock", "0", ThemeManager.warning(activity))
+
+        outOfStockText = makeStatView("Out of Stock", "0", ThemeManager.negative(activity))
 
         statsRow.addView(totalProductsText)
         statsRow.addView(inventoryValueText)
@@ -169,7 +177,9 @@ class InventoryPage(private val activity: Activity) {
 
         // SCROLLABLE PRODUCT LIST
         val scrollView = ScrollView(activity)
-        scrollView.setBackgroundColor(getPageBackgroundColor())
+
+        // Uses ThemeManager so the scroll area follows the selected theme - AF
+        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val scrollParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -179,7 +189,9 @@ class InventoryPage(private val activity: Activity) {
 
         productListContainer = LinearLayout(activity)
         productListContainer.orientation = LinearLayout.VERTICAL
-        productListContainer.setBackgroundColor(getPageBackgroundColor())
+
+        // Uses ThemeManager so the product list background follows the selected theme - AF
+        productListContainer.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         scrollView.addView(productListContainer)
 
@@ -203,7 +215,10 @@ class InventoryPage(private val activity: Activity) {
         val loadingText = TextView(activity)
         loadingText.text = "Loading inventory..."
         loadingText.textSize = 14f
-        loadingText.setTextColor(getMutedTextColor())
+
+        // Uses ThemeManager so loading text follows the selected theme - AF
+        loadingText.setTextColor(ThemeManager.mutedText(activity))
+
         loadingText.setPadding(dp(16), dp(16), dp(16), dp(16))
         productListContainer.addView(loadingText)
 
@@ -279,7 +294,10 @@ class InventoryPage(private val activity: Activity) {
                         val emptyText = TextView(activity)
                         emptyText.text = "No products found"
                         emptyText.textSize = 14f
-                        emptyText.setTextColor(getMutedTextColor())
+
+                        // Uses ThemeManager so empty text follows the selected theme - AF
+                        emptyText.setTextColor(ThemeManager.mutedText(activity))
+
                         emptyText.setPadding(dp(16), dp(16), dp(16), dp(16))
                         productListContainer.addView(emptyText)
                     } else {
@@ -288,7 +306,9 @@ class InventoryPage(private val activity: Activity) {
 
                             // Add thin divider line between rows
                             val divider = android.view.View(activity)
-                            divider.setBackgroundColor(getDividerColor())
+
+                            // Uses ThemeManager so dividers follow Light or Dark Mode - AF
+                            divider.setBackgroundColor(ThemeManager.divider(activity))
 
                             productListContainer.addView(
                                 divider,
@@ -308,7 +328,10 @@ class InventoryPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error loading inventory: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(getNegativeColor())
+
+                    // Uses ThemeManager so error text supports Colorblind Mode - AF
+                    errorText.setTextColor(ThemeManager.negative(activity))
+
                     errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
 
                     productListContainer.addView(errorText)
@@ -333,14 +356,20 @@ class InventoryPage(private val activity: Activity) {
         val row = LinearLayout(activity)
         row.orientation = LinearLayout.HORIZONTAL
         row.setPadding(dp(16), dp(12), dp(16), dp(12))
-        row.setBackgroundColor(getPageBackgroundColor())
+
+        // Uses ThemeManager so each product row follows the selected theme - AF
+        row.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         row.gravity = Gravity.CENTER_VERTICAL
 
         // Product name — clickable link
         val nameCell = TextView(activity)
         nameCell.text = product["name"] ?: ""
         nameCell.textSize = 14f
-        nameCell.setTextColor(getLinkColor())
+
+        // Uses ThemeManager so product links support Colorblind Mode - AF
+        nameCell.setTextColor(ThemeManager.primaryAction(activity))
+
         nameCell.layoutParams = LinearLayout.LayoutParams(
             0,
             LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -360,9 +389,9 @@ class InventoryPage(private val activity: Activity) {
         val stockCell = TextView(activity)
 
         val stockColor = when {
-            stock == 0 -> getNegativeColor()
-            stock <= reorderPoint -> getWarningColor()
-            else -> getSecondaryTextColor()
+            stock == 0 -> ThemeManager.negative(activity)
+            stock <= reorderPoint -> ThemeManager.warning(activity)
+            else -> ThemeManager.secondaryText(activity)
         }
 
         val stockPrefix = when {
@@ -395,9 +424,9 @@ class InventoryPage(private val activity: Activity) {
 
         reorderCell.setTextColor(
             if (stock <= reorderPoint && stock > 0) {
-                getWarningColor()
+                ThemeManager.warning(activity)
             } else {
-                getSecondaryTextColor()
+                ThemeManager.secondaryText(activity)
             }
         )
 
@@ -425,13 +454,12 @@ class InventoryPage(private val activity: Activity) {
         statusCell.text = status
         statusCell.textSize = 12f
 
-        statusCell.setTextColor(
-            when (status) {
-                "Out of Stock" -> getNegativeColor()
-                "Low Stock" -> getWarningColor()
-                else -> getSecondaryTextColor()
-            }
-        )
+        // Uses ThemeManager so row status colors support Colorblind Mode - AF
+        when (status) {
+            "Out of Stock" -> ThemeManager.negative(activity)
+            "Low Stock" -> ThemeManager.warning(activity)
+            else -> ThemeManager.secondaryText(activity)
+        }
 
         statusCell.layoutParams = LinearLayout.LayoutParams(
             0,
@@ -625,17 +653,24 @@ class InventoryPage(private val activity: Activity) {
         val adjustAmountInput = EditText(activity)
         adjustAmountInput.hint = "e.g. 10 or -5"
         adjustAmountInput.textSize = 14f
-        adjustAmountInput.setTextColor(Color.BLACK)
-        adjustAmountInput.setHintTextColor(Color.LTGRAY)
+
+        // Uses ThemeManager so amount inputs follow the selected theme - AF
+        adjustAmountInput.setTextColor(ThemeManager.primaryText(activity))
+        adjustAmountInput.setHintTextColor(ThemeManager.mutedText(activity))
         adjustAmountInput.setPadding(dp(8), dp(8), dp(8), dp(8))
-        adjustAmountInput.setBackgroundColor(Color.rgb(243, 244, 246))
+
+        adjustAmountInput.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         adjustAmountInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER or
             android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
 
         val noteText = TextView(activity)
         noteText.text = "Enter a positive number to add stock or negative to remove."
         noteText.textSize = 12f
-        noteText.setTextColor(Color.GRAY)
+
+        // Uses ThemeManager so note text follows the selected theme - AF
+        noteText.setTextColor(ThemeManager.mutedText(activity))
+
         noteText.setPadding(0, dp(4), 0, dp(8))
 
         form.addView(productLabel)
@@ -766,7 +801,9 @@ class InventoryPage(private val activity: Activity) {
         val header = LinearLayout(activity)
         header.orientation = LinearLayout.HORIZONTAL
         header.setPadding(dp(16), dp(10), dp(16), dp(10))
-        header.setBackgroundColor(getSectionBackgroundColor())
+
+        // Uses ThemeManager so the table header background follows the selected theme - AF
+        header.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         val columns = listOf(
             Pair("Product", 2f),
@@ -786,7 +823,10 @@ class InventoryPage(private val activity: Activity) {
             val cell = TextView(activity)
             cell.text = text
             cell.textSize = 12f
-            cell.setTextColor(getMutedTextColor())
+
+            // Uses ThemeManager so table header text follows the selected theme - AF
+            cell.setTextColor(ThemeManager.mutedText(activity))
+
             cell.setTypeface(null, Typeface.BOLD)
             cell.layoutParams = LinearLayout.LayoutParams(
                 0,
@@ -805,7 +845,7 @@ class InventoryPage(private val activity: Activity) {
         val cell = TextView(activity)
         cell.text = text
         cell.textSize = 13f
-        cell.setTextColor(getSecondaryTextColor())
+        cell.setTextColor(ThemeManager.secondaryText(activity))
         cell.layoutParams = LinearLayout.LayoutParams(
             0,
             LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -865,7 +905,10 @@ class InventoryPage(private val activity: Activity) {
         val label = TextView(activity)
         label.text = hint
         label.textSize = 13f
-        label.setTextColor(getMutedTextColor())
+
+        // Uses ThemeManager so dialog labels follow the selected theme - AF
+        label.setTextColor(ThemeManager.mutedText(activity))
+
         label.setPadding(0, dp(8), 0, dp(2))
         parent.addView(label)
 
@@ -873,10 +916,15 @@ class InventoryPage(private val activity: Activity) {
         input.hint = hint
         if (defaultValue.isNotEmpty()) input.setText(defaultValue)
         input.textSize = 14f
-        input.setTextColor(getPrimaryTextColor())
-        input.setHintTextColor(getMutedTextColor())
+
+        // Uses ThemeManager so the dialog input follows the selected theme - AF
+        input.setTextColor(ThemeManager.primaryText(activity))
+        input.setHintTextColor(ThemeManager.mutedText(activity))
+
         input.setPadding(dp(8), dp(8), dp(8), dp(8))
-        input.setBackgroundColor(getInputBackgroundColor())
+
+        input.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         input.inputType = when {
             isDecimal -> android.text.InputType.TYPE_CLASS_NUMBER or
                 android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
@@ -900,109 +948,12 @@ class InventoryPage(private val activity: Activity) {
         val label = TextView(activity)
         label.text = text
         label.textSize = 13f
-        label.setTextColor(Color.GRAY)
+
+        // Uses ThemeManager so form labels follow the selected theme - AF
+        label.setTextColor(ThemeManager.mutedText(activity))
+
         label.setPadding(0, dp(8), 0, dp(2))
         return label
-    }
-
-    private fun isDarkModeEnabled(): Boolean {
-        return prefs.getBoolean(KEY_DARK_MODE, false)
-    }
-
-    private fun isColorblindModeEnabled(): Boolean {
-        return prefs.getBoolean(KEY_COLORBLIND_MODE, false)
-    }
-
-    private fun getPageBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(38, 38, 38)
-        } else {
-            Color.WHITE
-        }
-    }
-
-    private fun getSectionBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(48, 48, 48)
-        } else {
-            Color.rgb(248, 249, 250)
-        }
-    }
-
-    private fun getInputBackgroundColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(60, 60, 60)
-        } else {
-            Color.rgb(243, 244, 246)
-        }
-    }
-
-    private fun getPrimaryTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.WHITE
-        } else {
-            Color.BLACK
-        }
-    }
-
-    private fun getSecondaryTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.LTGRAY
-        } else {
-            Color.rgb(55, 65, 81)
-        }
-    }
-
-    private fun getMutedTextColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(180, 180, 180)
-        } else {
-            Color.GRAY
-        }
-    }
-
-    private fun getDividerColor(): Int {
-        return if (isDarkModeEnabled()) {
-            Color.rgb(80, 80, 80)
-        } else {
-            Color.rgb(229, 231, 235)
-        }
-    }
-
-    private fun getLinkColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(0, 114, 178)
-        } else {
-            Color.rgb(45, 95, 255)
-        }
-    }
-
-    private fun getPrimaryActionColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(0, 114, 178)
-        } else {
-            Color.rgb(45, 95, 255)
-        }
-    }
-
-    private fun getPositiveColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(0, 114, 178)
-        } else {
-            Color.rgb(34, 197, 94)
-        }
-    }
-
-    private fun getWarningColor(): Int {
-        return Color.rgb(230, 159, 0)
-    }
-
-    private fun getNegativeColor(): Int {
-        return if (isColorblindModeEnabled()) {
-            Color.rgb(213, 94, 0)
-        } else {
-            Color.RED
-        }
     }
 
     // Converts dp to pixels

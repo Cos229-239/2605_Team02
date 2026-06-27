@@ -141,4 +141,12 @@ object ThemeManager {
             Color.rgb(255, 248, 248)
         }
     }
+
+    fun divider(activity: Activity): Int {
+        return if (isDarkMode(activity)) {
+            Color.rgb(80, 80, 80)
+        } else {
+            Color.rgb(229, 231, 235)
+        }
+    }
 }
