@@ -37,26 +37,36 @@ class TimecardReportsPage(
 
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
-        page.setBackgroundColor(Color.WHITE)
+
+        // Changes page background based on Settings - AF
+        page.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         // TOP BAR with back button and title
         val topBar = LinearLayout(activity)
         topBar.orientation = LinearLayout.HORIZONTAL
         topBar.gravity = Gravity.CENTER_VERTICAL
         topBar.setPadding(dp(16), dp(12), dp(16), dp(12))
-        topBar.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        // Changes top bar background based on Settings - AF
+        topBar.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         val backBtn = TextView(activity)
         backBtn.text = "< Back to Timecard"
         backBtn.textSize = 14f
-        backBtn.setTextColor(Color.rgb(45, 95, 255))
+
+        // Changes back button color based on Settings - AF
+        backBtn.setTextColor(ThemeManager.primaryAction(activity))
+
         backBtn.setPadding(0, 0, dp(16), 0)
         backBtn.setOnClickListener { onBack() }
 
         val titleText = TextView(activity)
         titleText.text = "Timecard Reports"
         titleText.textSize = 18f
-        titleText.setTextColor(Color.BLACK)
+
+        // Changes title color based on Settings - AF
+        titleText.setTextColor(ThemeManager.primaryText(activity))
+
         titleText.setTypeface(null, Typeface.BOLD)
         titleText.layoutParams = LinearLayout.LayoutParams(
             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -68,7 +78,10 @@ class TimecardReportsPage(
         val subtitle = TextView(activity)
         subtitle.text = "All employee attendance records"
         subtitle.textSize = 13f
-        subtitle.setTextColor(Color.GRAY)
+
+        // Changes subtitle color based on Settings - AF
+        subtitle.setTextColor(ThemeManager.mutedText(activity))
+
         subtitle.setPadding(dp(16), dp(4), dp(16), dp(8))
         page.addView(subtitle)
 
@@ -86,7 +99,10 @@ class TimecardReportsPage(
 
         weekRangeLabel = TextView(activity)
         weekRangeLabel.textSize = 14f
-        weekRangeLabel.setTextColor(Color.BLACK)
+
+        // Changes week range color based on Settings - AF
+        weekRangeLabel.setTextColor(ThemeManager.primaryText(activity))
+
         weekRangeLabel.setTypeface(null, Typeface.BOLD)
         weekRangeLabel.gravity = Gravity.CENTER
         weekRangeLabel.layoutParams = LinearLayout.LayoutParams(
@@ -108,6 +124,10 @@ class TimecardReportsPage(
 
         // SCROLLABLE REPORT
         val scrollView = ScrollView(activity)
+
+        // Changes scroll background based on Settings - AF
+        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         val scrollParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             0,
@@ -115,6 +135,10 @@ class TimecardReportsPage(
         )
 
         reportContainer = LinearLayout(activity)
+
+        // Changes report container background based on Settings - AF
+        reportContainer.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         reportContainer.orientation = LinearLayout.VERTICAL
         scrollView.addView(reportContainer)
         page.addView(scrollView, scrollParams)
@@ -138,7 +162,10 @@ class TimecardReportsPage(
         val loadingText = TextView(activity)
         loadingText.text = "Loading report..."
         loadingText.textSize = 14f
-        loadingText.setTextColor(Color.GRAY)
+
+        // Changes loading text color based on Settings - AF
+        loadingText.setTextColor(ThemeManager.mutedText(activity))
+
         loadingText.setPadding(dp(16), dp(16), dp(16), dp(16))
         reportContainer.addView(loadingText)
 
@@ -200,7 +227,10 @@ class TimecardReportsPage(
                         val emptyText = TextView(activity)
                         emptyText.text = "No employees found"
                         emptyText.textSize = 14f
-                        emptyText.setTextColor(Color.GRAY)
+
+                        // Changes empty text color based on Settings - AF
+                        emptyText.setTextColor(ThemeManager.mutedText(activity))
+
                         emptyText.setPadding(dp(16), dp(16), dp(16), dp(16))
                         reportContainer.addView(emptyText)
                         return@withContext
@@ -214,12 +244,17 @@ class TimecardReportsPage(
                         val empHeader = LinearLayout(activity)
                         empHeader.orientation = LinearLayout.HORIZONTAL
                         empHeader.setPadding(dp(16), dp(12), dp(16), dp(8))
-                        empHeader.setBackgroundColor(Color.rgb(237, 242, 255))
+
+                        // Changes employee header background based on Settings - AF
+                        empHeader.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
                         val empName = TextView(activity)
                         empName.text = "${employee.name} (${employee.position})"
                         empName.textSize = 15f
-                        empName.setTextColor(Color.BLACK)
+
+                        // Changes employee name color based on Settings - AF
+                        empName.setTextColor(ThemeManager.primaryText(activity))
+
                         empName.setTypeface(null, Typeface.BOLD)
                         empName.layoutParams = LinearLayout.LayoutParams(
                             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -230,7 +265,10 @@ class TimecardReportsPage(
                         val totalHoursText = TextView(activity)
                         totalHoursText.text = "Total: ${"%.2f".format(totalHours)} hrs"
                         totalHoursText.textSize = 14f
-                        totalHoursText.setTextColor(Color.rgb(45, 95, 255))
+
+                        // Changes total hours color based on Settings - AF
+                        totalHoursText.setTextColor(ThemeManager.primaryAction(activity))
+
                         totalHoursText.setTypeface(null, Typeface.BOLD)
 
                         empHeader.addView(empName)
@@ -243,7 +281,10 @@ class TimecardReportsPage(
                             reportContainer.addView(makeDayRow(date, timecard))
 
                             val divider = android.view.View(activity)
-                            divider.setBackgroundColor(Color.rgb(229, 231, 235))
+
+                            // Changes divider color based on Settings - AF
+                            divider.setBackgroundColor(ThemeManager.divider(activity))
+
                             reportContainer.addView(
                                 divider,
                                 LinearLayout.LayoutParams(
@@ -252,7 +293,10 @@ class TimecardReportsPage(
 
                         // Space between employees
                         val spacer = android.view.View(activity)
-                        spacer.setBackgroundColor(Color.rgb(200, 200, 200))
+
+                        // Changes employee spacer color based on Settings - AF
+                        spacer.setBackgroundColor(ThemeManager.divider(activity))
+
                         reportContainer.addView(
                             spacer,
                             LinearLayout.LayoutParams(
@@ -266,7 +310,10 @@ class TimecardReportsPage(
                     val errorText = TextView(activity)
                     errorText.text = "Error loading report: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+
+                    // Changes error text color based on Settings - AF
+                    errorText.setTextColor(ThemeManager.negative(activity))
+
                     errorText.setPadding(dp(16), dp(16), dp(16), dp(16))
                     reportContainer.addView(errorText)
                 }
@@ -284,6 +331,9 @@ class TimecardReportsPage(
         row.orientation = LinearLayout.HORIZONTAL
         row.setPadding(dp(16), dp(10), dp(16), dp(10))
         row.gravity = Gravity.CENTER_VERTICAL
+
+        // Changes row background based on Settings - AF
+        row.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
@@ -312,11 +362,12 @@ class TimecardReportsPage(
             else -> Color.GRAY
         }
 
-        row.addView(makeCell(date, 2f, Color.rgb(55, 65, 81)))
-        row.addView(makeCell(clockInStr, 1f, Color.rgb(55, 65, 81)))
-        row.addView(makeCell(clockOutStr, 1f, Color.rgb(55, 65, 81)))
-        row.addView(makeCell(breakStr, 1f, Color.rgb(55, 65, 81)))
-        row.addView(makeCell(hoursStr, 1f, Color.rgb(55, 65, 81)))
+        // Changes row cell text colors based on Settings - AF
+        row.addView(makeCell(date, 2f, ThemeManager.secondaryText(activity)))
+        row.addView(makeCell(clockInStr, 1f, ThemeManager.secondaryText(activity)))
+        row.addView(makeCell(clockOutStr, 1f, ThemeManager.secondaryText(activity)))
+        row.addView(makeCell(breakStr, 1f, ThemeManager.secondaryText(activity)))
+        row.addView(makeCell(hoursStr, 1f, ThemeManager.secondaryText(activity)))
         row.addView(makeCell(displayStatus, 1f, statusColor))
 
         return row
@@ -327,7 +378,9 @@ class TimecardReportsPage(
         val header = LinearLayout(activity)
         header.orientation = LinearLayout.HORIZONTAL
         header.setPadding(dp(16), dp(10), dp(16), dp(10))
-        header.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        // Changes table header background based on Settings - AF
+        header.setBackgroundColor(ThemeManager.sectionBackground(activity))
 
         listOf(
             Pair("Date", 2f),
@@ -340,7 +393,10 @@ class TimecardReportsPage(
             val cell = TextView(activity)
             cell.text = text
             cell.textSize = 12f
-            cell.setTextColor(Color.rgb(107, 114, 128))
+
+            // Changes table header text color based on Settings - AF
+            cell.setTextColor(ThemeManager.mutedText(activity))
+
             cell.setTypeface(null, Typeface.BOLD)
             cell.layoutParams = LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, weight)
@@ -367,7 +423,10 @@ class TimecardReportsPage(
         btn.text = text
         btn.textSize = 14f
         btn.gravity = Gravity.CENTER
-        btn.setTextColor(Color.rgb(45, 95, 255))
+
+        // Changes nav button color based on Settings - AF
+        btn.setTextColor(ThemeManager.primaryAction(activity))
+
         btn.setPadding(dp(12), dp(8), dp(12), dp(8))
         btn.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,

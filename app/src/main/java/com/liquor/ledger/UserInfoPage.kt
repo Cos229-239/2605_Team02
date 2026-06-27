@@ -45,9 +45,15 @@ class UserInfoPage(private val activity: Activity) {
 
         val page = LinearLayout(activity)
         page.orientation = LinearLayout.VERTICAL
-        page.setBackgroundColor(Color.WHITE)
+
+        // Changes page background based on Settings - AF
+        page.setBackgroundColor(ThemeManager.pageBackground(activity))
 
         val scrollView = ScrollView(activity)
+
+        // Changes scroll background based on Settings - AF
+        scrollView.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         val scrollParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.MATCH_PARENT
@@ -55,6 +61,10 @@ class UserInfoPage(private val activity: Activity) {
 
         val content = LinearLayout(activity)
         content.orientation = LinearLayout.VERTICAL
+
+        // Changes content background based on Settings - AF
+        content.setBackgroundColor(ThemeManager.pageBackground(activity))
+
         content.setPadding(dp(24), dp(24), dp(24), dp(24))
 
         // MY PROFILE CARD
@@ -66,7 +76,7 @@ class UserInfoPage(private val activity: Activity) {
             // ADD NEW EMPLOYEE BUTTON
             val addBtn = makeActionButton(
                 "+ Add New Employee",
-                Color.rgb(34, 197, 94)
+                ThemeManager.positive(activity)
             ) {
                 showAddEmployeeDialog()
             }
@@ -85,10 +95,14 @@ class UserInfoPage(private val activity: Activity) {
             val searchInput = EditText(activity)
             searchInput.hint = "Search by name or Employee ID..."
             searchInput.textSize = 14f
-            searchInput.setTextColor(Color.BLACK)
-            searchInput.setHintTextColor(Color.LTGRAY)
+
+            // Changes search input colors based on Settings - AF
+            searchInput.setTextColor(ThemeManager.primaryText(activity))
+            searchInput.setHintTextColor(ThemeManager.mutedText(activity))
+
             searchInput.setPadding(dp(12), dp(10), dp(12), dp(10))
-            searchInput.setBackgroundColor(Color.rgb(243, 244, 246))
+
+            searchInput.setBackgroundColor(ThemeManager.inputBackground(activity))
 
             val searchParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -128,7 +142,10 @@ class UserInfoPage(private val activity: Activity) {
         val loadingText = TextView(activity)
         loadingText.text = "Loading employees..."
         loadingText.textSize = 14f
-        loadingText.setTextColor(Color.GRAY)
+
+        // Changes loading text color based on Settings - AF
+        loadingText.setTextColor(ThemeManager.mutedText(activity))
+
         employeeListContainer.addView(loadingText)
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -159,7 +176,10 @@ class UserInfoPage(private val activity: Activity) {
                     val errorText = TextView(activity)
                     errorText.text = "Error loading employees: ${e.message}"
                     errorText.textSize = 14f
-                    errorText.setTextColor(Color.RED)
+
+                    // Changes error text color based on Settings - AF
+                    errorText.setTextColor(ThemeManager.negative(activity))
+
                     employeeListContainer.addView(errorText)
                 }
             }
@@ -183,7 +203,10 @@ class UserInfoPage(private val activity: Activity) {
             val emptyText = TextView(activity)
             emptyText.text = "No employees found"
             emptyText.textSize = 14f
-            emptyText.setTextColor(Color.GRAY)
+
+            // Changes empty text color based on Settings - AF
+            emptyText.setTextColor(ThemeManager.mutedText(activity))
+
             employeeListContainer.addView(emptyText)
             return
         }
@@ -192,7 +215,10 @@ class UserInfoPage(private val activity: Activity) {
             employeeListContainer.addView(makeEmployeeRow(employee, meta))
 
             val divider = android.view.View(activity)
-            divider.setBackgroundColor(Color.rgb(229, 231, 235))
+
+            // Changes divider color based on Settings - AF
+            divider.setBackgroundColor(ThemeManager.divider(activity))
+
             employeeListContainer.addView(
                 divider,
                 LinearLayout.LayoutParams(
@@ -204,7 +230,10 @@ class UserInfoPage(private val activity: Activity) {
     private fun makeProfileCard(employee: Employee?): LinearLayout {
         val card = LinearLayout(activity)
         card.orientation = LinearLayout.VERTICAL
-        card.setBackgroundColor(Color.rgb(248, 249, 250))
+
+        // Changes profile card background based on Settings - AF
+        card.setBackgroundColor(ThemeManager.sectionBackground(activity))
+
         card.setPadding(dp(20), dp(20), dp(20), dp(20))
 
         val cardParams = LinearLayout.LayoutParams(
@@ -226,7 +255,10 @@ class UserInfoPage(private val activity: Activity) {
             val labelView = TextView(activity)
             labelView.text = "$label:"
             labelView.textSize = 14f
-            labelView.setTextColor(Color.GRAY)
+
+            // Changes profile label color based on Settings - AF
+            labelView.setTextColor(ThemeManager.mutedText(activity))
+
             labelView.setTypeface(null, Typeface.BOLD)
             labelView.layoutParams = LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -234,7 +266,10 @@ class UserInfoPage(private val activity: Activity) {
             val valueView = TextView(activity)
             valueView.text = value
             valueView.textSize = 14f
-            valueView.setTextColor(Color.BLACK)
+
+            // Changes profile value color based on Settings - AF
+            valueView.setTextColor(ThemeManager.primaryText(activity))
+
             valueView.layoutParams = LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f)
 
@@ -258,8 +293,11 @@ class UserInfoPage(private val activity: Activity) {
         row.orientation = LinearLayout.HORIZONTAL
         row.gravity = Gravity.CENTER_VERTICAL
         row.setPadding(dp(16), dp(14), dp(16), dp(14))
+        // Changes employee row background based on Settings - AF
         row.setBackgroundColor(
-            if (isLocked) Color.rgb(255, 245, 245) else Color.WHITE)
+            if (isLocked) ThemeManager.emergencyBackground(activity)
+            else ThemeManager.pageBackground(activity)
+        )
 
         // Employee info
         val infoColumn = LinearLayout(activity)
@@ -270,19 +308,28 @@ class UserInfoPage(private val activity: Activity) {
         val nameText = TextView(activity)
         nameText.text = employee.name
         nameText.textSize = 15f
-        nameText.setTextColor(Color.BLACK)
+
+        // Changes employee name color based on Settings - AF
+        nameText.setTextColor(ThemeManager.primaryText(activity))
+
         nameText.setTypeface(null, Typeface.BOLD)
 
         val detailText = TextView(activity)
         detailText.text = "${employee.employeeId} • ${employee.position}"
         detailText.textSize = 13f
-        detailText.setTextColor(Color.GRAY)
+
+
+        // Changes employee detail color based on Settings - AF
+        detailText.setTextColor(ThemeManager.mutedText(activity))
 
         if (isLocked) {
             val lockedText = TextView(activity)
             lockedText.text = "LOCKED"
             lockedText.textSize = 12f
-            lockedText.setTextColor(Color.RED)
+
+            // Changes locked status color based on Settings - AF
+            lockedText.setTextColor(ThemeManager.negative(activity))
+
             lockedText.setTypeface(null, Typeface.BOLD)
             infoColumn.addView(lockedText)
         }
@@ -297,14 +344,18 @@ class UserInfoPage(private val activity: Activity) {
         btnColumn.gravity = Gravity.CENTER_VERTICAL
 
         // Edit button
-        val editBtn = makeSmallButton("Edit", Color.rgb(45, 95, 255))
+        // Changes edit button color based on Settings - AF
+        val editBtn = makeSmallButton("Edit", ThemeManager.primaryAction(activity))
+
         editBtn.setOnClickListener {
             showEditEmployeeDialog(employee)
         }
         btnColumn.addView(editBtn)
 
         // Set Password button
-        val passwordBtn = makeSmallButton("Set Password", Color.rgb(107, 114, 128))
+        // Changes password button color based on Settings - AF
+        val passwordBtn = makeSmallButton("Set Password", ThemeManager.mutedButton(activity))
+
         passwordBtn.setOnClickListener {
             showSetPasswordDialog(employee)
         }
@@ -318,7 +369,8 @@ class UserInfoPage(private val activity: Activity) {
 
         // Unlock button — only shows if account is locked
         if (isLocked) {
-            val unlockBtn = makeSmallButton("Unlock", Color.rgb(245, 158, 11))
+            // Changes unlock button color based on Settings - AF
+            val unlockBtn = makeSmallButton("Unlock", ThemeManager.warning(activity))
             unlockBtn.setOnClickListener {
                 AlertDialog.Builder(activity)
                     .setTitle("Unlock ${employee.name}'s Account?")
@@ -434,7 +486,10 @@ class UserInfoPage(private val activity: Activity) {
         val noteText = TextView(activity)
         noteText.text = "You can hand the tablet to the employee to set their own password."
         noteText.textSize = 13f
-        noteText.setTextColor(Color.GRAY)
+
+        // Changes password note text color based on Settings - AF
+        noteText.setTextColor(ThemeManager.mutedText(activity))
+
         noteText.setPadding(0, 0, 0, dp(12))
         form.addView(noteText)
 
@@ -535,7 +590,10 @@ class UserInfoPage(private val activity: Activity) {
         val noteText = TextView(activity)
         noteText.text = "Employee ID will be auto-generated."
         noteText.textSize = 12f
-        noteText.setTextColor(Color.GRAY)
+
+        // Changes add employee note text color based on Settings - AF
+        noteText.setTextColor(ThemeManager.mutedText(activity))
+
         noteText.setPadding(0, dp(4), 0, 0)
 
         form.addView(nameLabel)
@@ -784,7 +842,10 @@ class UserInfoPage(private val activity: Activity) {
         val title = TextView(activity)
         title.text = text
         title.textSize = 18f
-        title.setTextColor(Color.BLACK)
+
+        // Changes section title color based on Settings - AF
+        title.setTextColor(ThemeManager.primaryText(activity))
+
         title.setTypeface(null, Typeface.BOLD)
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -833,7 +894,10 @@ class UserInfoPage(private val activity: Activity) {
         val label = TextView(activity)
         label.text = text
         label.textSize = 13f
-        label.setTextColor(Color.GRAY)
+
+        // Changes dialog label color based on Settings - AF
+        label.setTextColor(ThemeManager.mutedText(activity))
+
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -848,9 +912,14 @@ class UserInfoPage(private val activity: Activity) {
         val input = EditText(activity)
         input.setText(defaultValue)
         input.textSize = 14f
-        input.setTextColor(Color.BLACK)
+
+        // Changes dialog input colors based on Settings - AF
+        input.setTextColor(ThemeManager.primaryText(activity))
+
         input.setPadding(dp(8), dp(8), dp(8), dp(8))
-        input.setBackgroundColor(Color.rgb(243, 244, 246))
+
+        input.setBackgroundColor(ThemeManager.inputBackground(activity))
+
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
